@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Freelancer Platform – Built by a Freelancer</title>
+    <link rel="stylesheet" href="index.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+    />
+  </head>
+  <body>
+    <!-- Navbar -->
+    <header class="navbar">
+      <div class="logo">Freelancer<span>Link</span></div>
+      <nav class="top-nav">
+        <a href="#story">My Story</a>
+        <a href="#features">Features</a>
+        <a href="#mission">Mission</a>
+        <a href="#join">Join</a>
+        <button
+          class="btn primary"
+          id="join-btn"
+          onclick="location.href='create-account.html'"
+        >
+          Create Account
+        </button>
+        <button class="btn secondary" onclick="location.href='login.html'">
+          Login
+        </button>
+      </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+      <canvas id="hero-bg"></canvas>
+      <div class="hero-content">
+        <h1>Built by a Freelancer Who Lived the Struggle</h1>
+        <p>
+          I couldn’t find the right coding tutor or the right platform to grow
+          as a freelancer — so I built one. A home for freelancers and clients
+          to connect, safely and fairly.
+        </p>
+        <div class="hero-buttons">
+          <button class="btn primary" id="join-now-btn">Join Now</button>
+          <button class="btn secondary" id="story-btn">Read My Story</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Story Section -->
+    <section class="story" id="story">
+      <h2>Why I Built This</h2>
+      <p>
+        I have a Bachelor's in Economics and Statistics, but my heart was in
+        computers. I couldn’t find the right tutor who could teach me real-world
+        programming — so I taught myself. I spent over 80 hours a week learning,
+        coding, failing, and improving.
+      </p>
+      <p>
+        When I was ready to work, I couldn’t find a job. I joined a startup as
+        an unpaid intern, surviving on borrowed money just to keep coding.
+        Everything changed when I met an Indian chess tutor named Tanvi, who
+        connected me with my first client — a parent in Scotland looking for a
+        coding tutor for his son. That £100 changed my life.
+      </p>
+      <p>
+        From that moment, I realized how powerful online freelancing could be.
+        But I also saw the problems — scams, unverified users, and hidden fees.
+        So I built this platform to fix that. A place that values skill,
+        integrity, and fairness — for freelancers and clients alike.
+      </p>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features" id="features">
+      <h2>What Makes Us Different</h2>
+      <div class="feature-grid">
+        <div class="feature-card">
+          <h3>✅ Verified Users</h3>
+          <p>
+            We verify both freelancers and clients. Verified users earn the blue
+            tick of trust.
+          </p>
+        </div>
+        <div class="feature-card">
+          <h3>⚖️ Dispute Resolution</h3>
+          <p>
+            Handled by professional arbitrators to ensure fairness for both
+            sides.
+          </p>
+        </div>
+        <div class="feature-card">
+          <h3>💸 No Hidden Fees</h3>
+          <p>Keep what you earn. We believe in transparency and honesty.</p>
+        </div>
+        <div class="feature-card">
+          <h3>🌍 Borderless</h3>
+          <p>
+            From individuals to enterprises — anyone can hire or work globally.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Mission & Vision -->
+    <section class="mission" id="mission">
+      <div class="mission-box">
+        <h2>Our Mission</h2>
+        <p>
+          To empower clients and freelancers worldwide to collaborate safely,
+          confidently, and fairly — no matter where they are.
+        </p>
+      </div>
+      <div class="mission-box">
+        <h2>Our Vision</h2>
+        <p>
+          To make remote work truly borderless — where skill, not geography,
+          defines opportunity.
+        </p>
+      </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta" id="join">
+      <h2>Join the Movement</h2>
+      <p>
+        Together, we can redefine what freelancing means — built on trust,
+        fairness, and connection.
+      </p>
+      <button
+        class="btn primary"
+        id="join-btn"
+        onclick="location.href='create-account.html'"
+      >
+        Create Account
+      </button>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>© 2025 FreelancerLink. Built with by a Freelancer.</p>
+    </footer>
+
+    <!-- bottom mobile nav -->
+    <nav class="mobile-nav">
+      <div class="nav-links-container">
+        <a href="#story" class="nav-link active">
+          <i class="fa-solid fa-user"></i>
+          <span>My Story</span>
+        </a>
+        <a href="#features" class="nav-link">
+          <i class="fa-solid fa-briefcase"></i>
+          <span>Features</span>
+        </a>
+        <a href="#mission" class="nav-link">
+          <i class="fa-solid fa-bullseye"></i>
+          <span>Mission</span>
+        </a>
+        <a href="#join" class="nav-link">
+          <i class="fa-solid fa-rocket"></i>
+          <span>Join</span>
+        </a>
+        <button class="btn secondary" onclick="location.href='login.html'">
+          Login
+        </button>
+        <button
+          class="btn primary"
+          id="join-btn"
+          onclick="location.href='create-account.html'"
+        >
+          Create Account
+        </button>
+      </div>
+    </nav>
+
+    <script src="index.js"></script>
+  </body>
+</html>

@@ -1,0 +1,41 @@
+<!-- views/overview.html -->
+<section id="overview-root">
+  <!-- KPI Cards -->
+  <section class="kpis" id="kpis-section">
+    <div class="kpi card">
+      <div class="kpi-title">Users</div>
+      <div id="kpi-users" class="kpi-value">—</div>
+    </div>
+    <div class="kpi card">
+      <div class="kpi-title">Pending Verifications</div>
+      <div id="kpi-pending" class="kpi-value">—</div>
+    </div>
+    <div class="kpi card">
+      <div class="kpi-title">Active Contracts</div>
+      <div id="kpi-contracts" class="kpi-value">—</div>
+    </div>
+  </section>
+
+  <!-- Quick Actions -->
+  <section class="card actions" id="overview-actions">
+    <h3>Quick Actions</h3>
+    <div class="actions-row">
+      <button class="btn" id="btn-review-verifications">
+        Review Verifications
+      </button>
+      <button class="btn ghost" id="btn-resolve-dispute">
+        Resolve Dispute
+      </button>
+    </div>
+  </section>
+
+  <!-- Recent Pending Items -->
+  <section class="card pending" id="overview-pending">
+    <h3>Recent Pending Items</h3>
+    <ul id="pending-list">
+      <li>Company verification — Acme Ltd</li>
+      <li>Contract awaiting witness signature — #C-2109</li>
+      <li>Dispute opened — Contract #C-2081</li>
+    </ul>
+  </section>
+</section>

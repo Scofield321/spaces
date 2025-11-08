@@ -1,0 +1,254 @@
+:root {
+  --background: #f9f9fb;
+  --card-bg: #ffffff;
+  --primary: #1e40af;
+  --primary-hover: #456ef6;
+  --text: #1e293b;
+  --muted: #64748b;
+  --border: #e2e8f0;
+  --radius: 12px;
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --loader-size: 18px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: "Inter", system-ui, sans-serif;
+}
+
+body {
+  background: var(--background);
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  padding: 1rem;
+}
+
+.auth-container {
+  width: 100%;
+  max-width: 420px;
+}
+
+.auth-card {
+  background: var(--card-bg);
+  padding: 2rem;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  transition: all 0.3s ease;
+}
+
+.auth-card h1 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 0.5rem;
+}
+
+.subtitle {
+  color: var(--muted);
+  font-size: 0.95rem;
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1rem;
+  position: relative;
+}
+
+label {
+  font-size: 0.9rem;
+  color: var(--muted);
+  margin-bottom: 0.4rem;
+}
+
+input,
+select {
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 1rem;
+  background: #fff;
+  width: 100%;
+}
+
+input:focus,
+select:focus {
+  border-color: var(--primary);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+/* Password toggle */
+.password-container {
+  position: relative;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  font-size: 1rem;
+  user-select: none;
+}
+
+/* Buttons */
+.primary-btn {
+  background: var(--primary);
+  color: #fff;
+  width: 100%;
+  border: none;
+  padding: 0.85rem;
+  border-radius: var(--radius);
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-top: 0.5rem;
+  transition: background 0.3s ease;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.primary-btn:hover {
+  background: var(--primary-hover);
+}
+
+/* Loader inside buttons */
+.primary-btn .loader {
+  border: 3px solid #fff;
+  border-top: 3px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  width: var(--loader-size);
+  height: var(--loader-size);
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* OTP container */
+#otp-container {
+  margin-top: 1rem;
+}
+
+#otp-container input {
+  margin-bottom: 0.7rem;
+}
+
+#otp-container button {
+  width: auto;
+  margin-top: 0.3rem;
+}
+
+/* Alt option */
+.alt-option {
+  text-align: center;
+  font-size: 0.9rem;
+  margin-top: 1.2rem;
+}
+
+.alt-option a {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.alt-option a:hover {
+  text-decoration: underline;
+}
+
+/* OTP Container */
+#otp-container {
+  background: var(--card-bg);
+  padding: 2rem;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  transition: all 0.3s ease;
+}
+
+#otp-container h2 {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--text);
+  text-align: center;
+}
+
+#otp-container input {
+  width: 100%;
+  max-width: 220px;
+  padding: 0.7rem 0.9rem;
+  font-size: 1.1rem;
+  text-align: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  outline: none;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+#otp-container input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+#otp-container button {
+  padding: 0.7rem 1.2rem;
+  border: none;
+  border-radius: var(--radius);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+#verify-otp-btn {
+  background: var(--primary);
+  color: #fff;
+  width: 100%;
+  max-width: 220px;
+}
+
+#verify-otp-btn:hover {
+  background: var(--primary-hover);
+}
+
+#resend-otp-btn {
+  background: transparent;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+  width: 100%;
+  max-width: 220px;
+}
+
+#resend-otp-btn:hover {
+  background: var(--primary);
+  color: #fff;
+}
+
+/* Responsive */
+@media (min-width: 768px) {
+  .auth-card {
+    padding: 2.5rem 3rem;
+  }
+  #otp-container {
+    padding: 2.5rem;
+  }
+}

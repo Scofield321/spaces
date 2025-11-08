@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Spaces | Admin Dashboard</title>
+    <link rel="stylesheet" href="admin-dashboard.css" />
+  </head>
+  <body>
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="brand">Spaces</div>
+      <div class="top-actions">
+        <div class="profile" id="admin-name">Admin ▾</div>
+      </div>
+    </header>
+
+    <!-- Main Layout -->
+    <div class="layout">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <ul>
+          <li><a href="#overview" class="nav-link">📊 Overview</a></li>
+          <li><a href="#users" class="nav-link">🧑 Users</a></li>
+          <!-- <li><a href="#contracts" class="nav-link">🧾 Contracts</a></li> -->
+          <li><a href="#disputes" class="nav-link">⚖️ Disputes</a></li>
+          <li><a href="#verification" class="nav-link">Verification</a></li>
+          <li><a href="#settings" class="nav-link">⚙️ Settings</a></li>
+        </ul>
+      </aside>
+
+      <!-- Content (views will be injected into this element) -->
+      <main id="main-content" class="content"></main>
+    </div>
+    <!-- Document Preview Modal -->
+    <div id="document-modal" class="modal">
+      <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <iframe id="document-frame" src="" frameborder="0"></iframe>
+      </div>
+    </div>
+
+    <!-- Edit User Modal (kept global so it's available to views) -->
+    <div id="edit-user-modal" class="modal hidden">
+      <div class="modal-content">
+        <h3>Edit User</h3>
+        <form id="edit-user-form">
+          <input type="hidden" id="edit-user-id" />
+
+          <input
+            type="text"
+            id="edit-first-name"
+            placeholder="First Name"
+            required
+          />
+          <input
+            type="text"
+            id="edit-last-name"
+            placeholder="Last Name"
+            required
+          />
+          <input type="email" id="edit-email" placeholder="Email" required />
+          <input type="text" id="edit-role" placeholder="Role" required />
+          <input type="text" id="edit-country" placeholder="Country" />
+          <input type="text" id="edit-client-type" placeholder="Client Type" />
+          <select id="edit-verified">
+            <option value="true">Verified: Yes</option>
+            <option value="false">Verified: No</option>
+          </select>
+
+          <div class="modal-actions">
+            <button type="submit" class="btn">Save</button>
+            <button type="button" class="btn ghost" id="close-edit-modal">
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Bottom navigation for mobile -->
+    <nav class="bottom-nav">
+      <a href="#overview" class="nav-link">Overview</a>
+      <a href="#users" class="nav-link">Users</a>
+      <!-- <a href="#contracts" class="nav-link">Contracts</a> -->
+      <a href="#disputes" class="nav-link">Disputes</a>
+      <a href="#verification" class="nav-link">Verifications</a>
+      <a href="#settings" class="nav-link">Settings</a>
+    </nav>
+
+    <footer class="footer">© <span id="year"></span> Spaces</footer>
+
+    <!-- Router (loads views and page-specific scripts). It will import admin-dashboard.js when overview loads. -->
+    <script type="module" src="admin-dashboard-router.js"></script>
+
+    <script>
+      // misc: fill year
+      document.getElementById("year").textContent = new Date().getFullYear();
+    </script>
+
+    <script type="module">
+      import { initAdminRouter } from "./admin-dashboard-router.js";
+      initAdminRouter();
+    </script>
+  </body>
+</html>

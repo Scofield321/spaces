@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Spaces | Freelancer Dashboard</title>
+    <link rel="stylesheet" href="freelancer-dashboard.css" />
+  </head>
+  <body>
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="brand">Spaces</div>
+      <div class="top-actions">
+        <div class="profile" id="freelancer-name"></div>
+      </div>
+    </header>
+
+    <div class="layout">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <ul>
+          <li class="nav-link active" data-view="home">Home</li>
+          <li class="nav-link" data-view="contracts">Contracts</li>
+          <li class="nav-link" data-view="invites">Invites</li>
+          <!-- <li class="nav-link" data-view="assigned-projects">
+            Assigned Projects
+          </li> -->
+          <li class="nav-link" data-view="verification">Verification</li>
+          <li class="nav-link" data-view="notifications">
+            Notifications
+            <span id="notif-badge" class="notif-badge" style="display: none"
+              >0</span
+            >
+          </li>
+          <li class="nav-link" data-view="applications">Applications</li>
+          <li class="nav-link" data-view="disputes">Disputes</li>
+          <li class="nav-link" data-view="profile">Profile</li>
+        </ul>
+      </aside>
+
+      <!-- Main Content -->
+      <main id="main-content" class="content">
+        <!-- Dynamic views will load here -->
+      </main>
+    </div>
+
+    <!-- Bottom navigation for mobile -->
+    <nav class="bottom-nav">
+      <a href="#" class="nav-link active" data-view="home">Home</a>
+      <a href="#" class="nav-link" data-view="contracts">Contracts</a>
+      <a href="#" class="nav-link" data-view="invites">Invites</a>
+      <!-- <a href="#" class="nav-link" data-view="assigned-projects">Assigned</a> -->
+      <a href="#" class="nav-link" data-view="verification">Verification</a>
+      <a href="#" class="nav-link" data-view="notifications">Notifications </a>
+      <a href="#" class="nav-link" data-view="applications">Applications</a>
+      <a href="#" class="nav-link" data-view="disputes">Disputes</a>
+      <a href="#" class="nav-link" data-view="profile">Profile</a>
+    </nav>
+
+    <!-- verification modal -->
+    <div id="document-modal" style="display: none">
+      <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <iframe id="document-frame" src="" frameborder="0"></iframe>
+      </div>
+    </div>
+    <!-- Router Script -->
+    <script type="module" src="freelancer-dashboard-router.js"></script>
+    <script type="module">
+      import { initFreelancerRouter } from "./freelancer-dashboard-router.js";
+      initFreelancerRouter();
+    </script>
+    <script type="module" src="freelancer-dashboard.js"></script>
+  </body>
+</html>

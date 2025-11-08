@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Create Account | Spaces</title>
+    <link rel="stylesheet" href="create-account.css" />
+  </head>
+  <body>
+    <main class="auth-container">
+      <div class="auth-card">
+        <h1>Create Your Spaces Account</h1>
+        <p class="subtitle">
+          Join <strong>Spaces</strong> — the trusted network for freelancers and
+          clients
+        </p>
+
+        <form id="create-account-form">
+          <div class="input-group">
+            <input
+              type="text"
+              id="firstname"
+              name="firstname"
+              required
+              placeholder="First Name"
+            />
+          </div>
+
+          <div class="input-group">
+            <input
+              type="text"
+              id="lastname"
+              name="lastname"
+              required
+              placeholder="Last Name"
+            />
+          </div>
+
+          <div class="input-group">
+            <input
+              type="email"
+              id="email"
+              name="email"
+              required
+              placeholder="Email Address"
+            />
+          </div>
+
+          <div class="input-group">
+            <select id="country" name="country" required>
+              <option value="" disabled selected>Loading countries...</option>
+            </select>
+          </div>
+
+          <div class="input-group">
+            <select id="role" name="role" required>
+              <option value="" disabled selected>Select Your Role</option>
+              <option value="freelancer">Freelancer</option>
+              <option value="client">Client</option>
+            </select>
+          </div>
+
+          <!-- 🔹 Client Type Selector (Hidden by default) -->
+          <div class="input-group" id="client-type-group" style="display: none">
+            <select id="client-type" name="client-type">
+              <option value="" disabled selected>Select Client Type</option>
+              <option value="individual">Individual</option>
+              <option value="company">Company</option>
+            </select>
+          </div>
+
+          <div class="input-group">
+            <input
+              type="password"
+              id="password"
+              name="password"
+              required
+              placeholder="Password"
+            />
+          </div>
+
+          <div class="input-group">
+            <input
+              type="password"
+              id="confirm-password"
+              name="confirm-password"
+              required
+              placeholder="Confirm Password"
+            />
+          </div>
+
+          <button type="submit" class="primary-btn">Create Account</button>
+        </form>
+
+        <p class="alt-option">
+          Already have a <strong>Spaces</strong> account?
+          <a href="login.html">Login</a>
+        </p>
+      </div>
+    </main>
+
+    <script>
+      const roleSelect = document.getElementById("role");
+      const clientTypeGroup = document.getElementById("client-type-group");
+
+      roleSelect.addEventListener("change", function () {
+        if (this.value === "client") {
+          clientTypeGroup.style.display = "block";
+        } else {
+          clientTypeGroup.style.display = "none";
+        }
+      });
+    </script>
+    <script type="module" src="create-account.js"></script>
+  </body>
+</html>
