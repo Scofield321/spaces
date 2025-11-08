@@ -4,8 +4,8 @@ const isLocal = /^localhost$|^127\.\d+\.\d+\.\d+$/.test(
 
 export const BASE_URL = isLocal
   ? "http://localhost:5000/api"
-  : "https://spaces.onrender.com/api";
+  : "https://spaces-2m3b.onrender.com/api";
 
 export const SOCKET_URL = isLocal
   ? "http://localhost:5000"
-  : "https://spaces.onrender.com";
+  : "https://spaces-2m3b.onrender.com";
