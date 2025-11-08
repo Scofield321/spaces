@@ -40,11 +40,11 @@ cd spaces
 
 ### 🔹 2. Install Dependencies
 
-- npm install
+npm install
 
 ### 🔹 3. Configure Environment Variables
 
-Create a .env file in the project root and add your configuration:
+Create a `.env` file in the project root and add your configuration:
 
 DB_HOST=localhost
 DB_USER=your_username
@@ -56,6 +56,6 @@ ADMIN_CREATION_SECRET=your_admin_secret
 
 ### 💡 Make sure PostgreSQL and Supabase are set up before running the backend.
 
-### 4. Start the Server
+### 🔹 4. Start the Server
 
 node server.js
