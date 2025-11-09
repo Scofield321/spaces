@@ -8,11 +8,13 @@ const {
   getUserVerification,
 } = require("../../controllers/verificationController");
 const { authMiddleware } = require("../../middleware/authMiddleware");
+const { ensureBody } = require("../../middleware/ensureBody");
 
 // Submit verification (client)
 router.post(
   "/submit",
   authMiddleware,
+  ensureBody,
   upload.fields([
     { name: "front", maxCount: 1 },
     { name: "back", maxCount: 1 },
