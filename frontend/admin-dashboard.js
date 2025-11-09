@@ -1,5 +1,6 @@
 import { BASE_URL } from "./config.js";
 import { Session } from "./session.js";
+import { showLoader, hideLoader } from "./loader.js";
 
 // ---------- API Wrapper ----------
 async function fetchWithAuth(url, options = {}) {
@@ -11,7 +12,7 @@ async function fetchWithAuth(url, options = {}) {
   const res = await fetch(url, options);
   if (!res.ok) {
     const error = await res.json().catch(() => ({}));
-    throw new Error(error.msg || "API Error");
+    throw new Error(error.msg || "Something Wrong Happened, Try Again");
   }
   return res.json();
 }

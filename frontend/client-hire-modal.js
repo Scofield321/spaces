@@ -9,7 +9,10 @@ async function fetchWithAuth(url, options = {}) {
     Authorization: `Bearer ${Session.token()}`,
   };
   const res = await fetch(url, options);
-  if (!res.ok) throw new Error((await res.json()).message || "API Error");
+  if (!res.ok)
+    throw new Error(
+      (await res.json()).message || "Something Wrong Happened, Try Again"
+    );
   return res.json();
 }
 
@@ -66,6 +69,8 @@ export async function openHireModal(freelancerId) {
         <textarea name="work_scope" rows="4" 
         placeholder="Example: Design a responsive landing page with hero, services, and contact sections. Deliverables: HTML/CSS files and images. Complete within 2 weeks."></textarea>      
         </label>
+
+        <p>Press red X button for all the fields you want to leave open, except Payment Terms</p>
 
         <!-- Milestones -->
         <div class="dynamic-field" id="milestones-container">

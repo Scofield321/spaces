@@ -1,17 +1,29 @@
 import { BASE_URL } from "./config.js";
 import { Session } from "./session.js";
+import { showLoader, hideLoader } from "./loader.js";
 
-async function fetchWithAuth(url, options = {}) {
+// ---------- API Helper ----------
+export async function fetchWithAuth(url, options = {}) {
   options.headers = {
     ...(options.headers || {}),
     "Content-Type": "application/json",
     Authorization: `Bearer ${Session.token()}`,
   };
-  const res = await fetch(url, options);
-  if (!res.ok) throw new Error((await res.json()).msg || "API Error");
-  return res.json();
+
+  showLoader();
+  try {
+    const res = await fetch(url, options);
+    if (!res.ok)
+      throw new Error(
+        (await res.json()).msg || "Something Wrong Happened, Try Again"
+      );
+    return res.json();
+  } finally {
+    hideLoader();
+  }
 }
 
+// ---------- Helpers ----------
 function formatDate(d) {
   if (!d) return "-";
   return new Date(d).toLocaleDateString(undefined, {
@@ -29,55 +41,52 @@ function formatStatus(status) {
     accepted: "✅ Accepted",
     closed: "❌ Closed",
   };
-  return map[status?.toLowerCase()] || status;
+  return map[status?.toLowerCase()] || status || "-";
 }
 
+// ---------- Main Loader ----------
 export async function loadContracts() {
+  const content = document.getElementById("main-content");
+  content.innerHTML = `<p>Loading contracts...</p>`;
+
   try {
-    const content = document.getElementById("main-content");
+    const data = await fetchWithAuth(`${BASE_URL}/contracts`);
+    const contracts = data.contracts || [];
+
     content.innerHTML = `
       <section class="card">
         <h3>My Contracts</h3>
-        <div class="results-grid" id="contracts-results"></div>
+        <div class="results-grid" id="contracts-results">
+          ${
+            contracts.length
+              ? contracts
+                  .map(
+                    (c) => `
+            <div class="card contract-card">
+              <h4>${c.project_title || "-"}</h4>
+              <p><strong>Freelancer:</strong> ${c.freelancer_name || "-"}</p>
+              <p><strong>Email:</strong> ${c.freelancer_email || "-"}</p>
+              <p><strong>Amount:</strong> $${c.amount || "-"}</p>
+              <p><strong>Type:</strong> ${c.type || "-"}</p>
+              <p><strong>Start Date:</strong> ${formatDate(c.start_date)}</p>
+              <p><strong>Duration:</strong> ${c.expected_duration || "-"}</p>
+              <p><strong>Status:</strong> ${formatStatus(c.status)}</p>
+              <button class="btn btn-sm btn-outline view-contract-btn" data-id="${
+                c.id
+              }">View Contract</button>
+            </div>
+          `
+                  )
+                  .join("")
+              : `<p>No contracts yet.</p>`
+          }
+        </div>
       </section>
     `;
 
-    const container = document.getElementById("contracts-results");
-    const data = await fetchWithAuth(`${BASE_URL}/contracts`);
-
-    if (!data.contracts.length) {
-      container.innerHTML = `<p>No contracts yet.</p>`;
-      return;
-    }
-
-    container.innerHTML = data.contracts
-      .map(
-        (c) => `
-      <div class="card contract-card">
-        <h4>${c.project_title || "-"}</h4>
-
-        <p><strong>Freelancer:</strong> ${c.freelancer_name || "-"}</p>
-        <p><strong>Freelancer:</strong> ${c.freelancer_email || "-"}</p>
-        <p><strong>Amount:</strong> $${c.amount}</p>
-        <p><strong>Type:</strong> ${c.type || "-"}</p>
-        <p><strong>Start Date:</strong> ${formatDate(c.start_date)}</p>
-        <p><strong>Duration:</strong> ${c.expected_duration || "-"}</p>
-        <p><strong>Status:</strong> ${formatStatus(c.status)}</p>
-
-        <button class="btn btn-sm btn-outline view-contract-btn" data-id="${
-          c.id
-        }">
-            View Contract
-        </button>
-
-      </div>
-    `
-      )
-      .join("");
-
     // Attach click listeners for "View Contract"
     document.querySelectorAll(".view-contract-btn").forEach((btn) => {
-      btn.addEventListener("click", async () => {
+      btn.onclick = async () => {
         const id = btn.dataset.id;
         try {
           const res = await fetchWithAuth(`${BASE_URL}/contracts/${id}`);
@@ -86,24 +95,21 @@ export async function loadContracts() {
           console.error(err);
           alert("Failed to load contract details");
         }
-      });
+      };
     });
   } catch (err) {
     console.error(err);
-    document.getElementById(
-      "main-content"
-    ).innerHTML = `<p>Error loading contracts</p>`;
+    content.innerHTML = `<p>Error loading contracts</p>`;
   }
 }
 
+// ---------- Contract Modal ----------
 function openContractModal(contract) {
-  // Remove old modal
   const oldModal = document.querySelector(".modal-overlay");
   if (oldModal) oldModal.remove();
 
-  // Create modal
   const modal = document.createElement("div");
-  modal.classList.add("modal-overlay");
+  modal.className = "modal-overlay";
   modal.innerHTML = `
     <div class="modal contract-modal">
       <button class="modal-close">&times;</button>
@@ -115,30 +121,24 @@ function openContractModal(contract) {
 
       <div class="modal-body">
         <div class="contract-info">
-          <p>
-            <strong>Freelancer:</strong> ${contract.freelancer_name}
-            ${
-              contract.freelancer_email
-                ? `<span class="email">&lt;${contract.freelancer_email}&gt;</span>`
-                : ""
-            }
-          </p>
-          <p>
-            <strong>Client:</strong> ${Session.user().first_name || "You"}
-            ${
-              contract.client_email
-                ? `<span class="email">&lt;${contract.client_email}&gt;</span>`
-                : ""
-            }
-          </p>
+          <p><strong>Freelancer:</strong> ${contract.freelancer_name || "-"} ${
+    contract.freelancer_email
+      ? `<span class="email">&lt;${contract.freelancer_email}&gt;</span>`
+      : ""
+  }</p>
+          <p><strong>Client:</strong> ${Session.user()?.first_name || "You"} ${
+    contract.client_email
+      ? `<span class="email">&lt;${contract.client_email}&gt;</span>`
+      : ""
+  }</p>
         </div>
 
         <div class="contract-details">
-          <p><strong>Amount:</strong> $${contract.amount}</p>
-          <p><strong>Type:</strong> ${contract.type ?? "-"}</p>
+          <p><strong>Amount:</strong> $${contract.amount || "-"}</p>
+          <p><strong>Type:</strong> ${contract.type || "-"}</p>
           <p><strong>Start Date:</strong> ${formatDate(contract.start_date)}</p>
           <p><strong>Expected Duration:</strong> ${
-            contract.expected_duration ?? "-"
+            contract.expected_duration || "-"
           }</p>
         </div>
 
@@ -146,7 +146,7 @@ function openContractModal(contract) {
 
         <div class="contract-work">
           <h4>Work Scope / Description</h4>
-          <p>${contract.work_scope ?? "No description provided"}</p>
+          <p>${contract.work_scope || "No description provided"}</p>
         </div>
 
         <hr />
@@ -164,11 +164,10 @@ function openContractModal(contract) {
           </ul>
         </div>
 
-        <!-- MVP Notice -->
         <div class="contract-notice" style="margin-top: 1rem; padding: 0.5rem; background-color: #f0f4f8; border-left: 4px solid #007bff;">
           <p style="margin:0; font-size: 0.9rem; color:#333;">
-            For now, please coordinate project details directly via email with the other party.
-            Our in-platform messaging system will be available in future updates.
+            For now, coordinate project details directly via email with the other party.
+            In-platform messaging will be added in future updates.
           </p>
         </div>
       </div>
@@ -176,11 +175,8 @@ function openContractModal(contract) {
   `;
 
   document.body.appendChild(modal);
-
-  // Show modal
   modal.style.display = "flex";
 
-  // Close modal events
   modal.querySelector(".modal-close").onclick = () => modal.remove();
   modal.onclick = (e) => {
     if (e.target === modal) modal.remove();

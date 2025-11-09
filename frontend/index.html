@@ -13,7 +13,7 @@
   <body>
     <!-- Navbar -->
     <header class="navbar">
-      <div class="logo">Freelancer<span>Link</span></div>
+      <div class="logo">Spaces</div>
       <nav class="top-nav">
         <a href="#story">My Story</a>
         <a href="#features">Features</a>
@@ -162,16 +162,17 @@
           <i class="fa-solid fa-rocket"></i>
           <span>Join</span>
         </a>
-        <button class="btn secondary" onclick="location.href='login.html'">
-          Login
-        </button>
-        <button
-          class="btn primary"
-          id="join-btn"
-          onclick="location.href='create-account.html'"
-        >
-          Create Account
-        </button>
+
+        <!-- Login / Create Account with icons -->
+        <a class="nav-link" onclick="location.href='create-account.html'">
+          <i class="fa-solid fa-user-plus"></i>
+          <span>Register</span>
+        </a>
+
+        <a class="nav-link" onclick="location.href='login.html'">
+          <i class="fa-solid fa-right-to-bracket"></i>
+          <span>Login</span>
+        </a>
       </div>
     </nav>
 

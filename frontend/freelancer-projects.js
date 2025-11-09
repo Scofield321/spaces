@@ -1,7 +1,8 @@
 import { BASE_URL } from "./config.js";
 import { Session } from "./session.js";
+import { showLoader, hideLoader } from "./loader.js";
 
-// Helper
+// ---------- API Wrapper ----------
 async function fetchWithAuth(url, options = {}) {
   options.headers = {
     ...(options.headers || {}),
@@ -11,15 +12,19 @@ async function fetchWithAuth(url, options = {}) {
     options.headers["Content-Type"] = "application/json";
   }
   const res = await fetch(url, options);
-  if (!res.ok) throw new Error((await res.json()).message || "API Error");
+  if (!res.ok)
+    throw new Error(
+      (await res.json()).message || "Something Wrong Happened, Try Again"
+    );
   return res.json();
 }
 
 // ---------- Load My Projects ----------
 export async function loadMyProjects() {
+  const content = document.getElementById("main-content");
+  showLoader(); // show loader at start
   try {
     const data = await fetchWithAuth(`${BASE_URL}/freelancer/my-projects`);
-    const content = document.getElementById("main-content");
 
     if (data.contracts.length === 0) {
       content.innerHTML = "<p>You have no projects yet.</p>";
@@ -47,7 +52,8 @@ export async function loadMyProjects() {
     `;
   } catch (err) {
     console.error("Error loading projects:", err);
-    document.getElementById("main-content").innerHTML =
-      "<p>Error loading projects.</p>";
+    content.innerHTML = "<p>Error loading projects.</p>";
+  } finally {
+    hideLoader(); // hide loader after API finishes
   }
 }

@@ -1,5 +1,6 @@
 import { BASE_URL } from "./config.js";
 import { Session } from "./session.js";
+import { showLoader, hideLoader } from "./loader.js";
 
 // Helper for fetch with auth
 async function fetchWithAuth(url, options = {}) {
@@ -10,9 +11,18 @@ async function fetchWithAuth(url, options = {}) {
   if (!(options.body instanceof FormData)) {
     options.headers["Content-Type"] = "application/json";
   }
-  const res = await fetch(url, options);
-  if (!res.ok) throw new Error((await res.json()).message || "API Error");
-  return res.json();
+
+  showLoader();
+  try {
+    const res = await fetch(url, options);
+    if (!res.ok)
+      throw new Error(
+        (await res.json()).message || "Something Wrong Happened, Try Again"
+      );
+    return res.json();
+  } finally {
+    hideLoader();
+  }
 }
 
 function formatParagraphs(text) {
@@ -33,7 +43,6 @@ export async function loadClientProfile() {
 
     content.innerHTML = `
       <section class="profile-section">
-
         <div class="profile-header">
           <img id="profile-picture" src="${
             user.profile_picture || "https://placehold.co/100"
@@ -70,7 +79,6 @@ export async function loadClientProfile() {
             user.verification_status || "pending"
           }</p>
         </div>
-
       </section>
     `;
 
@@ -78,6 +86,7 @@ export async function loadClientProfile() {
       renderEditProfile(user);
   } catch (e) {
     console.error(e);
+    alert("Failed to load profile.");
   }
 }
 
@@ -98,9 +107,9 @@ function renderEditProfile(user) {
           }" alt="Profile Image"/>
           <input type="file" id="profile_picture_input" accept="image/*" />
           <span id="upload-text">Click or drag to upload</span>
+          <div id="upload-status" style="margin-top:0.5rem;"></div>
         </div>
         <h2>Edit Profile</h2>
-        <div id="upload-status" style="margin-top:0.5rem;"></div>
       </div>
 
       <div class="card form-card">
@@ -170,6 +179,7 @@ function renderEditProfile(user) {
     formData.append("profile_picture", file);
 
     try {
+      showLoader();
       const res = await fetchWithAuth(
         `${BASE_URL}/client/profile/profile-picture`,
         {
@@ -182,6 +192,8 @@ function renderEditProfile(user) {
     } catch (err) {
       uploadStatus.textContent = `Upload failed: ${err.message}`;
       console.error(err);
+    } finally {
+      hideLoader();
     }
   };
 
@@ -197,14 +209,18 @@ function renderEditProfile(user) {
     };
 
     try {
+      showLoader();
       await fetchWithAuth(`${BASE_URL}/client/profile`, {
         method: "PUT",
         body: JSON.stringify(body),
       });
+      hideLoader();
+
       alert("Profile saved ✅");
       modal.remove();
       loadClientProfile();
     } catch (err) {
+      hideLoader();
       alert(`Failed to save profile: ${err.message}`);
     }
   };

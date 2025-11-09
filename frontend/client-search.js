@@ -1,6 +1,7 @@
 import { BASE_URL } from "./config.js";
 import { Session } from "./session.js";
 import { openHireModal } from "./client-hire-modal.js";
+import { showLoader, hideLoader } from "./loader.js";
 
 /* ================= API Helper ================= */
 async function fetchWithAuth(url, options = {}) {
@@ -11,9 +12,17 @@ async function fetchWithAuth(url, options = {}) {
     Authorization: `Bearer ${Session.token()}`,
   };
 
-  const res = await fetch(url, options);
-  if (!res.ok) throw new Error((await res.json()).msg || "API Error");
-  return res.json();
+  showLoader(); // ✅ Show loader before API call
+  try {
+    const res = await fetch(url, options);
+    if (!res.ok)
+      throw new Error(
+        (await res.json()).msg || "Something Wrong Happened, Try Again"
+      );
+    return res.json();
+  } finally {
+    hideLoader(); // ✅ Hide loader after API call
+  }
 }
 
 /* ================= Render Freelancer Card ================= */
@@ -123,6 +132,7 @@ function formatOverview(text) {
 /* ================= Freelancer Modal ================= */
 async function openFreelancerModal(freelancerId) {
   try {
+    showLoader();
     // Fetch profile and reviews
     const data = await fetchWithAuth(
       `${BASE_URL}/freelancer/profile/${freelancerId}`
@@ -130,6 +140,7 @@ async function openFreelancerModal(freelancerId) {
     const reviewsRes = await fetchWithAuth(
       `${BASE_URL}/freelancer/reviews/${freelancerId}`
     );
+    hideLoader();
 
     // Destructure with safe defaults
     const {
@@ -265,6 +276,7 @@ async function openFreelancerModal(freelancerId) {
       if (e.target === modal) modal.remove();
     };
   } catch (err) {
+    hideLoader();
     console.error("Failed to load freelancer profile:", err);
     alert("Error loading profile");
   }
@@ -392,6 +404,7 @@ function openInviteModal(freelancerId) {
     }
 
     try {
+      showLoader();
       await fetchWithAuth(`${BASE_URL}/client/invite-freelancer`, {
         method: "POST",
         body: JSON.stringify({
@@ -401,6 +414,7 @@ function openInviteModal(freelancerId) {
           message,
         }),
       });
+      hideLoader();
 
       msg.textContent = "✅ Invitation sent successfully!";
       msg.style.color = "green";
@@ -409,6 +423,7 @@ function openInviteModal(freelancerId) {
         modal.remove();
       }, 800);
     } catch (err) {
+      hideLoader();
       console.error(err);
       msg.textContent = err.message || "Failed to send invitation";
       msg.style.color = "red";

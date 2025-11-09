@@ -23,7 +23,7 @@ const io = new Server(server, {
 app.set("io", io); // make io globally available
 
 // -------------------------
-// Middleware
+// Middlewares
 // -------------------------
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

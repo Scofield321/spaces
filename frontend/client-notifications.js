@@ -1,6 +1,7 @@
 // client-notifications.js
 import { BASE_URL, SOCKET_URL } from "./config.js";
 import { Session } from "./session.js";
+import { showLoader, hideLoader } from "./loader.js";
 
 // ---------- API Helper ----------
 async function fetchWithAuth(url, options = {}) {
@@ -9,12 +10,21 @@ async function fetchWithAuth(url, options = {}) {
     "Content-Type": "application/json",
     Authorization: `Bearer ${Session.token()}`,
   };
-  const res = await fetch(url, options);
-  if (!res.ok) throw new Error((await res.json()).msg || "API Error");
-  return res.json();
+
+  showLoader();
+  try {
+    const res = await fetch(url, options);
+    if (!res.ok)
+      throw new Error(
+        (await res.json()).msg || "Something Wrong Happened, Try Again"
+      );
+    return res.json();
+  } finally {
+    hideLoader();
+  }
 }
 
-// Helper for notfications alert
+// Helper for notifications alert
 export async function fetchAndUpdateUnreadNotifications() {
   try {
     const data = await fetchWithAuth(`${BASE_URL}/client/notifications`);
@@ -43,6 +53,7 @@ function updateNotificationBadge(notifications) {
   }
 }
 
+// ---------- Load Notifications ----------
 export async function loadNotifications() {
   const content = document.getElementById("main-content");
 
@@ -50,14 +61,8 @@ export async function loadNotifications() {
     const data = await fetchWithAuth(`${BASE_URL}/client/notifications`);
     const notifications = data.notifications || [];
 
-    // ✅ Update unread count badge immediately
+    // Update unread badge immediately
     updateNotificationBadge(notifications);
-
-    // ✅ Hide badge only if no unread left
-    // if (notifications.every((n) => n.read)) {
-    //   const notifBadge = document.getElementById("notif-badge");
-    //   if (notifBadge) notifBadge.style.display = "none";
-    // }
 
     if (!notifications.length) {
       content.innerHTML = `<section class="card"><p>No notifications yet.</p></section>`;
@@ -109,7 +114,7 @@ export async function loadNotifications() {
       </section>
     `;
 
-    // 📩 View Email popup
+    // View Email popup
     document.querySelectorAll(".view-email-btn").forEach((btn) => {
       btn.addEventListener("click", () => {
         const email = btn.dataset.email;
@@ -117,23 +122,26 @@ export async function loadNotifications() {
       });
     });
 
-    // ✅ Mark notification as read
+    // Mark notification as read
     document.querySelectorAll(".mark-read-btn").forEach((btn) => {
       btn.onclick = async () => {
         const li = btn.closest(".notification-item");
         const id = li.dataset.id;
 
         try {
+          showLoader();
           await fetchWithAuth(
             `${BASE_URL}/client/notifications/${id}/mark-read`,
-            { method: "POST" }
+            {
+              method: "POST",
+            }
           );
 
           li.classList.remove("unread");
           btn.textContent = "Read";
           btn.disabled = true;
 
-          // ✅ Refresh badge count
+          // Refresh badge count
           const updated = await fetchWithAuth(
             `${BASE_URL}/client/notifications`
           );
@@ -141,6 +149,8 @@ export async function loadNotifications() {
         } catch (err) {
           console.error("Error marking notification read:", err);
           alert("Failed to mark as read.");
+        } finally {
+          hideLoader();
         }
       };
     });
@@ -150,8 +160,8 @@ export async function loadNotifications() {
   }
 }
 
+// ---------- Email Modal ----------
 function showEmailModal(email) {
-  // Remove existing modal if any
   const existing = document.getElementById("email-modal");
   if (existing) existing.remove();
 
@@ -174,31 +184,25 @@ function showEmailModal(email) {
 
   document.body.appendChild(modal);
 
-  // Close modal
   modal.querySelector(".modal-close").onclick = () => modal.remove();
   modal.onclick = (e) => {
     if (e.target === modal) modal.remove();
   };
 
-  // Copy email
   modal.querySelector(".copy-email-btn").onclick = () => {
     navigator.clipboard.writeText(email);
     showToast("Email copied!");
   };
 }
 
-// Toast for the email copied
-
+// ---------- Toast ----------
 function showToast(msg) {
   const el = document.createElement("div");
   el.className = "toast";
   el.textContent = msg;
   document.body.appendChild(el);
 
-  setTimeout(() => {
-    el.classList.add("show");
-  }, 10);
-
+  setTimeout(() => el.classList.add("show"), 10);
   setTimeout(() => {
     el.classList.remove("show");
     el.remove();

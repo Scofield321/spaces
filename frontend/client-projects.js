@@ -1,5 +1,6 @@
 import { BASE_URL } from "./config.js";
 import { Session } from "./session.js";
+import { showLoader, hideLoader } from "./loader.js";
 
 async function fetchWithAuth(url, options = {}) {
   options.headers = {
@@ -7,11 +8,21 @@ async function fetchWithAuth(url, options = {}) {
     "Content-Type": "application/json",
     Authorization: `Bearer ${Session.token()}`,
   };
-  const res = await fetch(url, options);
-  if (!res.ok) throw new Error((await res.json()).msg || "API Error");
-  return res.json();
+
+  showLoader();
+  try {
+    const res = await fetch(url, options);
+    if (!res.ok)
+      throw new Error(
+        (await res.json()).msg || "Something Wrong Happened, Try Again"
+      );
+    return res.json();
+  } finally {
+    hideLoader();
+  }
 }
 
+/* ================== Manage Projects ================== */
 export async function loadManageProjects() {
   try {
     const content = document.getElementById("main-content");
@@ -25,10 +36,8 @@ export async function loadManageProjects() {
       </section>
     `;
 
-    // Attach Post Project button action → open modal
-    document.getElementById("postProjectBtn").onclick = () => {
+    document.getElementById("postProjectBtn").onclick = () =>
       openPostProjectModal();
-    };
 
     const container = document.getElementById("projects-results");
     const data = await fetchWithAuth(`${BASE_URL}/client/my-projects`);
@@ -38,7 +47,6 @@ export async function loadManageProjects() {
         <p>You haven't posted any projects yet.</p>
         <button class="btn" id="firstPostBtn">Post your first Project</button>
       `;
-
       document.getElementById("firstPostBtn").onclick = () =>
         openPostProjectModal();
       return;
@@ -54,7 +62,7 @@ export async function loadManageProjects() {
         <p>Created: ${new Date(p.created_at).toLocaleDateString()}</p>
 
         <div class="project-actions">
-          <button class="btn" data-id="${p.id}">Edit</button>
+          <button class="btn edit-project-btn" data-id="${p.id}">Edit</button>
           <button class="btn delete-project-btn" data-id="${
             p.id
           }">Delete</button>
@@ -70,21 +78,17 @@ export async function loadManageProjects() {
   }
 }
 
-/* -----------------------------------
-   Modal: Post Project
------------------------------------ */
+/* ---------------- Post Project Modal ---------------- */
 function openPostProjectModal() {
   const old = document.querySelector(".modal-overlay");
   if (old) old.remove();
 
   const modal = document.createElement("div");
   modal.classList.add("modal-overlay");
-
   modal.innerHTML = `
     <div class="modal">
       <button class="modal-close">&times;</button>
       <h3>Post a New Project</h3>
-
       <form id="post-project-form">
         <label>Project Title</label>
         <input type="text" name="title" placeholder="Enter project title" required />
@@ -100,7 +104,6 @@ function openPostProjectModal() {
 
         <button type="submit" class="btn">Post Project</button>
       </form>
-
       <div id="post-project-message" style="margin-top:10px;"></div>
     </div>
   `;
@@ -142,6 +145,7 @@ function openPostProjectModal() {
     }
 
     try {
+      showLoader();
       await fetchWithAuth(`${BASE_URL}/client/post-project`, {
         method: "POST",
         body: JSON.stringify({
@@ -151,15 +155,17 @@ function openPostProjectModal() {
           budget_text: budgetText,
         }),
       });
+      hideLoader();
 
       msg.textContent = "✅ Project posted successfully!";
       msg.style.color = "green";
 
       setTimeout(() => {
         modal.remove();
-        loadManageProjects(); // reload projects list
+        loadManageProjects();
       }, 800);
     } catch (err) {
+      hideLoader();
       console.error(err);
       msg.textContent = err.message || "Error posting project.";
       msg.style.color = "red";
@@ -167,18 +173,24 @@ function openPostProjectModal() {
   };
 }
 
-/* -----------------------------------
-   Edit / Delete Handlers
------------------------------------ */
+/* ---------------- Edit / Delete ---------------- */
 function attachProjectActions() {
   // Edit project
   document.querySelectorAll(".edit-project-btn").forEach((btn) => {
     btn.onclick = async () => {
-      const projectId = btn.dataset.id;
-      const res = await fetchWithAuth(
-        `${BASE_URL}/client/project/${projectId}`
-      );
-      openEditProjectModal(res.project); // pass project data to modal
+      try {
+        showLoader();
+        const projectId = btn.dataset.id;
+        const res = await fetchWithAuth(
+          `${BASE_URL}/client/project/${projectId}`
+        );
+        hideLoader();
+        openEditProjectModal(res.project);
+      } catch (err) {
+        hideLoader();
+        console.error(err);
+        alert("Error fetching project data.");
+      }
     };
   });
 
@@ -189,12 +201,15 @@ function attachProjectActions() {
       if (!confirm("Are you sure you want to delete this project?")) return;
 
       try {
+        showLoader();
         await fetchWithAuth(`${BASE_URL}/client/project/${projectId}`, {
           method: "DELETE",
         });
+        hideLoader();
         alert("Project deleted successfully!");
         loadManageProjects();
       } catch (err) {
+        hideLoader();
         console.error(err);
         alert("Error deleting project.");
       }
@@ -208,12 +223,10 @@ function openEditProjectModal(project) {
 
   const modal = document.createElement("div");
   modal.classList.add("modal-overlay");
-
   modal.innerHTML = `
     <div class="modal">
       <button class="modal-close">&times;</button>
       <h3>Edit Project</h3>
-
       <form id="edit-project-form">
         <label>Project Title</label>
         <input type="text" name="title" value="${project.title}" required />
@@ -230,7 +243,6 @@ function openEditProjectModal(project) {
 
         <button class="btn" type="submit">Save Changes</button>
       </form>
-
       <div id="edit-project-message" style="margin-top:10px;"></div>
     </div>
   `;
@@ -266,6 +278,7 @@ function openEditProjectModal(project) {
     }
 
     try {
+      showLoader();
       await fetchWithAuth(`${BASE_URL}/client/project/${project.id}`, {
         method: "PUT",
         body: JSON.stringify({
@@ -275,6 +288,7 @@ function openEditProjectModal(project) {
           budget_text: budgetText,
         }),
       });
+      hideLoader();
 
       msg.textContent = "✅ Project updated!";
       msg.style.color = "green";
@@ -284,6 +298,7 @@ function openEditProjectModal(project) {
         loadManageProjects();
       }, 800);
     } catch (err) {
+      hideLoader();
       console.error(err);
       msg.textContent = err.message || "Error updating.";
       msg.style.color = "red";

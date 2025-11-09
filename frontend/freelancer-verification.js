@@ -1,16 +1,21 @@
 import { BASE_URL } from "./config.js";
 import { Session } from "./session.js";
+import { showLoader, hideLoader } from "./loader.js";
 
 // ---------- API Wrapper ----------
 async function fetchWithAuth(url, options = {}) {
   options.headers = {
     ...(options.headers || {}),
-    "Content-Type":
-      options.body instanceof FormData ? undefined : "application/json",
     Authorization: `Bearer ${Session.token()}`,
   };
+  if (!(options.body instanceof FormData)) {
+    options.headers["Content-Type"] = "application/json";
+  }
   const res = await fetch(url, options);
-  if (!res.ok) throw new Error((await res.json()).msg || "API Error");
+  if (!res.ok)
+    throw new Error(
+      (await res.json()).msg || "Something Wrong Happened, Try Again"
+    );
   return res.json();
 }
 
@@ -39,108 +44,137 @@ window.onclick = (event) => {
 // ---------- Load Freelancer Verification ----------
 export const loadFreelancerVerification = async () => {
   const main = document.getElementById("main-content");
+  showLoader(); // show loader at the start
+  let verification = null;
 
   try {
-    const { verification } = await fetchWithAuth(
-      `${BASE_URL}/freelancer-verification/me`
-    );
+    const res = await fetchWithAuth(`${BASE_URL}/freelancer-verification/me`);
+    verification = res.verification;
+  } catch (err) {
+    hideLoader(); // hide loader on error
+    if (err.message !== "No verification submitted yet") {
+      main.innerHTML = `<p class="text-danger">Error: ${err.message}</p>`;
+      return;
+    }
+  }
 
-    main.innerHTML = `
-      <div class="card form-card">
-        <h2>Verification Status</h2>
-        <div class="verification-info">
-          <p><strong>Document Type:</strong> ${
-            verification.document_type || "N/A"
-          }</p>
-          <p><strong>Status:</strong> 
-            <span class="status-badge ${verification.status.toLowerCase()}">
-              ${
-                verification.status.charAt(0).toUpperCase() +
-                verification.status.slice(1)
-              }
-            </span>
-          </p>
-          ${
-            verification.status === "rejected"
-              ? `<p><strong>Rejection Reason:</strong> ${
-                  verification.rejection_reason || "No reason provided"
-                }</p>`
-              : ""
-          }
-          <p><strong>Submitted At:</strong> ${new Date(
-            verification.submitted_at
-          ).toLocaleString()}</p>
-          ${
-            verification.reviewed_at
-              ? `<p><strong>Reviewed At:</strong> ${new Date(
-                  verification.reviewed_at
-                ).toLocaleString()}</p>`
-              : ""
-          }
-          <p><strong>Documents:</strong></p>
-          <div class="verification-docs">
-            <button class="btn btn-sm btn-outline" onclick="previewDocument('${
-              verification.document_front
-            }')">View Front</button>
+  hideLoader(); // hide loader after API finishes
+  const isRejected = verification?.status === "rejected";
+
+  // ---------- Helper: render form ----------
+  const renderForm = (docType = "") => `
+    <div class="card form-card" style="margin-top:1rem">
+      <h2>${verification ? "Resubmit" : "Submit"} Verification Documents</h2>
+      <form id="verification-form" class="verification-form">
+        <div class="form-group">
+          <label>Document Type</label>
+          <select name="document_type" class="input" required>
+            <option value="">Select document</option>
+            <option value="National ID" ${
+              docType === "National ID" ? "selected" : ""
+            }>National ID</option>
+            <option value="Passport" ${
+              docType === "Passport" ? "selected" : ""
+            }>Passport</option>
+            <option value="Driving Licence" ${
+              docType === "Driving Licence" ? "selected" : ""
+            }>Driving Licence</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Front of Document</label>
+          <input type="file" name="front" class="input" required />
+        </div>
+        <div class="form-group">
+          <label>Back of Document </label>
+          <input type="file" name="back" class="input" />
+        </div>
+        <button type="submit" class="btn btn-success full">${
+          verification ? "Resubmit" : "Submit"
+        }</button>
+      </form>
+      <div id="verification-result" style="margin-top:1rem"></div>
+    </div>
+  `;
+
+  // ---------- Render based on verification status ----------
+  if (!verification) {
+    main.innerHTML = renderForm();
+    attachFormHandler();
+    return;
+  }
+
+  main.innerHTML = `
+    <div class="card form-card">
+      <h2>Verification Status</h2>
+      <div class="verification-info">
+        <p><strong>Document Type:</strong> ${
+          verification.document_type || "N/A"
+        }</p>
+        <p><strong>Status:</strong> 
+          <span class="status-badge ${verification.status.toLowerCase()}">
             ${
-              verification.document_back
-                ? `<button class="btn btn-sm btn-outline" onclick="previewDocument('${verification.document_back}')">View Back</button>`
-                : ""
+              verification.status.charAt(0).toUpperCase() +
+              verification.status.slice(1)
             }
-          </div>
+          </span>
+        </p>
+        ${
+          isRejected
+            ? `<p><strong>Rejection Reason:</strong> ${
+                verification.rejection_reason || "No reason provided"
+              }</p>`
+            : ""
+        }
+        <p><strong>Submitted At:</strong> ${new Date(
+          verification.submitted_at
+        ).toLocaleString()}</p>
+        ${
+          verification.reviewed_at
+            ? `<p><strong>Reviewed At:</strong> ${new Date(
+                verification.reviewed_at
+              ).toLocaleString()}</p>`
+            : ""
+        }
+        <p><strong>Documents:</strong></p>
+        <div class="verification-docs">
+          <button class="btn btn-sm btn-outline" onclick="previewDocument('${
+            verification.document_front
+          }')">View Front</button>
+          ${
+            verification.document_back
+              ? `<button class="btn btn-sm btn-outline" onclick="previewDocument('${verification.document_back}')">View Back</button>`
+              : ""
+          }
         </div>
       </div>
-    `;
-  } catch (err) {
-    // No verification yet, show form
-    main.innerHTML = `
-      <div class="card form-card">
-        <h2>Submit Verification Documents</h2>
-        <form id="verification-form" class="verification-form">
-          <div class="form-group">
-            <label>Document Type</label>
-            <select name="document_type" class="input" required>
-              <option value="">Select document</option>
-              <option value="National ID">National ID</option>
-              <option value="Passport">Passport</option>
-              <option value="Driving Licence">Driving Licence</option>
-            </select>
-          </div>
+    </div>
+  `;
 
-          <div class="form-group">
-            <label>Front of Document</label>
-            <input type="file" name="front" class="input" required />
-          </div>
+  if (isRejected) {
+    main.innerHTML += renderForm(verification.document_type);
+    attachFormHandler();
+  }
 
-          <div class="form-group">
-            <label>Back of Document (optional)</label>
-            <input type="file" name="back" class="input" />
-          </div>
-
-          <button type="submit" class="btn btn-success full">Submit Verification</button>
-        </form>
-        <div id="verification-result" style="margin-top: 1rem;"></div>
-      </div>
-    `;
-
-    // Attach submit handler
+  // ---------- Form handler ----------
+  function attachFormHandler() {
     const form = document.getElementById("verification-form");
     form.onsubmit = async (e) => {
       e.preventDefault();
       const data = new FormData(form);
       try {
+        showLoader();
         await fetchWithAuth(`${BASE_URL}/freelancer-verification/submit`, {
           method: "POST",
           body: data,
         });
-        document.getElementById("verification-result").innerHTML = `
-          <div class="status-badge completed">Verification Submitted Successfully</div>
-        `;
-        loadFreelancerVerification();
+        await loadFreelancerVerification(); // reload verification status
       } catch (err) {
         document.getElementById("verification-result").innerHTML = `
           <div class="status-badge rejected">${err.message}</div>
         `;
+      } finally {
+        hideLoader();
       }
     };
   }

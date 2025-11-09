@@ -382,12 +382,12 @@ section.visible {
 
 /* Buttons in mobile nav */
 .mobile-nav .btn {
-  flex: 0 0 auto; /* don’t shrink */
-  min-width: 80px; /* minimum size */
-  max-width: 120px; /* optional max size */
-  white-space: nowrap; /* prevent wrapping */
+  flex: 0 0 auto;
+  min-width: 80px;
+  max-width: 120px;
+  white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis; /* add "..." if text too long */
+  text-overflow: ellipsis;
   padding: 6px 12px;
   border-radius: 8px;
   border: none;

@@ -39,6 +39,7 @@ const submitVerification = async (req, res) => {
     const frontFile = req.files?.front?.[0];
     const backFile = req.files?.back?.[0];
 
+    console.log("Files received:", req.files);
     if (!frontFile) return res.status(400).json({ msg: "Front doc required" });
 
     const frontUrl = await uploadToSupabase(frontFile, userId);

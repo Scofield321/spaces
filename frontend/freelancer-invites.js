@@ -1,5 +1,6 @@
 import { BASE_URL } from "./config.js";
 import { Session } from "./session.js";
+import { showLoader, hideLoader } from "./loader.js";
 
 // ---------- Helper: fetch with auth ----------
 async function fetchWithAuth(url, options = {}) {
@@ -9,7 +10,10 @@ async function fetchWithAuth(url, options = {}) {
     Authorization: `Bearer ${Session.token()}`,
   };
   const res = await fetch(url, options);
-  if (!res.ok) throw new Error((await res.json()).message || "API Error");
+  if (!res.ok)
+    throw new Error(
+      (await res.json()).message || "Something Wrong Happened, Try Again"
+    );
   return res.json();
 }
 
@@ -22,7 +26,7 @@ export async function loadFreelancerInvites() {
   `;
 
   const list = document.getElementById("invites-list");
-
+  showLoader();
   try {
     const res = await fetchWithAuth(`${BASE_URL}/freelancer/invites`);
     const invites = res.invites;
@@ -88,8 +92,9 @@ export async function loadFreelancerInvites() {
       .join("");
 
     // ✅ Accept
-    document.querySelectorAll(".accept-btn").forEach((btn) => {
-      btn.onclick = async () => {
+    btn.onclick = async () => {
+      try {
+        showLoader(); // ✅ show loader while accepting
         await fetchWithAuth(
           `${BASE_URL}/freelancer/invite/${btn.dataset.id}/accept`,
           {
@@ -98,8 +103,10 @@ export async function loadFreelancerInvites() {
         );
         alert("✅ Invitation accepted");
         loadFreelancerInvites();
-      };
-    });
+      } finally {
+        hideLoader(); // ✅ hide loader after accept completes
+      }
+    };
 
     // ✅ Decline
     document.querySelectorAll(".decline-btn").forEach((btn) => {
@@ -108,6 +115,7 @@ export async function loadFreelancerInvites() {
         if (!reason) return alert("Reason cannot be empty");
 
         try {
+          showLoader(); // ✅ show loader while declining
           await fetchWithAuth(
             `${BASE_URL}/freelancer/invite/${btn.dataset.id}/decline`,
             {
@@ -120,11 +128,15 @@ export async function loadFreelancerInvites() {
         } catch (e) {
           console.error(e);
           alert("Failed to decline invitation");
+        } finally {
+          hideLoader(); // ✅ hide loader after decline completes
         }
       };
     });
   } catch (e) {
     console.error(e);
     list.innerHTML = `<p class="error">Failed to load invitations</p>`;
+  } finally {
+    hideLoader(); // ✅ hide loader after fetch finishes or fails
   }
 }

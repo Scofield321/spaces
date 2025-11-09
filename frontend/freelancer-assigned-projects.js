@@ -11,7 +11,10 @@ async function fetchWithAuth(url, options = {}) {
     options.headers["Content-Type"] = "application/json";
   }
   const res = await fetch(url, options);
-  if (!res.ok) throw new Error((await res.json()).message || "API Error");
+  if (!res.ok)
+    throw new Error(
+      (await res.json()).message || "Something Wrong Happened, Try Again"
+    );
   return res.json();
 }
 

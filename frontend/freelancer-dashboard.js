@@ -1,6 +1,7 @@
 import { BASE_URL } from "./config.js";
 import { Session } from "./session.js";
 import { fetchAndUpdateUnreadNotifications } from "./freelancer-notifications.js";
+import { showLoader, hideLoader } from "./loader.js";
 
 // Toast
 function showToast(msg) {
@@ -23,7 +24,10 @@ async function fetchWithAuth(url, options = {}) {
     Authorization: `Bearer ${Session.token()}`,
   };
   const res = await fetch(url, options);
-  if (!res.ok) throw new Error((await res.json()).message || "API Error");
+  if (!res.ok)
+    throw new Error(
+      (await res.json()).message || "Something Wrong Happened, Try Again"
+    );
   return res.json();
 }
 
@@ -160,6 +164,7 @@ function attachApplyEvents() {
       button.classList.add("applied-btn");
 
       try {
+        showLoader();
         await fetchWithAuth(`${BASE_URL}/freelancer/apply`, {
           method: "POST",
           body: JSON.stringify({ projectId }),
@@ -170,6 +175,8 @@ function attachApplyEvents() {
         button.disabled = false;
         button.classList.remove("applied-btn");
         showToast(err.message);
+      } finally {
+        hideLoader(); // ✅ hide loader after apply completes
       }
     };
   });
@@ -179,6 +186,7 @@ function attachApplyEvents() {
 export async function loadFreelancerDashboard() {
   const content = document.getElementById("main-content");
   content.innerHTML = "<p>Loading your dashboard...</p>";
+  showLoader();
 
   try {
     const [jobsRes, statsRes, recentAppsRes, notifsRes] = await Promise.all([
@@ -204,6 +212,8 @@ export async function loadFreelancerDashboard() {
   } catch (err) {
     console.error(err);
     content.innerHTML = "<p>Error loading dashboard.</p>";
+  } finally {
+    hideLoader(); // ✅ hide loader after fetch finishes or fails
   }
 }
 

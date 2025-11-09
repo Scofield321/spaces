@@ -1,5 +1,6 @@
 import { BASE_URL } from "./config.js";
 import { Session } from "./session.js";
+import { showLoader, hideLoader } from "./loader.js";
 
 // ---------- API Wrapper ----------
 async function fetchWithAuth(url, options = {}) {
@@ -13,7 +14,7 @@ async function fetchWithAuth(url, options = {}) {
   const res = await fetch(url, options);
   if (!res.ok) {
     const error = await res.json().catch(() => ({}));
-    throw new Error(error.msg || "API Error");
+    throw new Error(error.msg || "Something Wrong Happened, Try Again");
   }
   return res.json();
 }
@@ -44,6 +45,7 @@ window.onclick = (event) => {
 export const loadClientVerification = async () => {
   const main = document.getElementById("main-content");
 
+  showLoader();
   let verification = null;
   try {
     const res = await fetchWithAuth(`${BASE_URL}/client-verification/me`);
@@ -52,8 +54,11 @@ export const loadClientVerification = async () => {
     // 404 = no verification submitted yet
     if (err.message !== "No verification submitted yet") {
       main.innerHTML = `<p class="text-danger">Error: ${err.message}</p>`;
+      hideLoader();
       return;
     }
+  } finally {
+    hideLoader(); // ✅ Hide loader after fetch
   }
 
   // ---------- No verification yet ----------
@@ -76,7 +81,7 @@ export const loadClientVerification = async () => {
             <input type="file" name="front" class="input" required />
           </div>
           <div class="form-group">
-            <label>Back of Document (optional)</label>
+            <label>Back of Document</label>
             <input type="file" name="back" class="input" />
           </div>
           <button type="submit" class="btn btn-success full">Submit Verification</button>
@@ -90,6 +95,7 @@ export const loadClientVerification = async () => {
       e.preventDefault();
       const data = new FormData(form);
       try {
+        showLoader();
         await fetchWithAuth(`${BASE_URL}/client-verification/submit`, {
           method: "POST",
           body: data,
@@ -99,6 +105,8 @@ export const loadClientVerification = async () => {
         document.getElementById("verification-result").innerHTML = `
           <div class="status-badge rejected">${err.message}</div>
         `;
+      } finally {
+        hideLoader(); // ✅ Hide loader after submission
       }
     };
     return;
@@ -199,6 +207,7 @@ export const loadClientVerification = async () => {
       e.preventDefault();
       const data = new FormData(form);
       try {
+        showLoader();
         await fetchWithAuth(`${BASE_URL}/client-verification/submit`, {
           method: "POST",
           body: data,
@@ -208,6 +217,8 @@ export const loadClientVerification = async () => {
         document.getElementById("verification-result").innerHTML = `
           <div class="status-badge rejected">${err.message}</div>
         `;
+      } finally {
+        hideLoader(); // ✅ Hide loader
       }
     };
   }

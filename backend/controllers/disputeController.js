@@ -8,10 +8,10 @@ const raiseDispute = async (req, res) => {
     const raised_by = req.user.id;
     const files = req.files;
 
-    if (!project_title || !reason) {
+    if (!project_title || !reason || !against) {
       return res
         .status(400)
-        .json({ message: "Project title and reason are required" });
+        .json({ message: "Project title, against and reason are required" });
     }
 
     // For MVP, we skip validating against an actual project
@@ -83,12 +83,15 @@ const getDisputes = async (req, res) => {
       query = `
         SELECT d.*,
                d.project_title,
+               d.admin_reason,  -- add this
                rb.first_name AS raised_by_first_name,
                rb.last_name AS raised_by_last_name,
                rb.role AS raised_by_role,
+               rb.email AS raised_by_email,
                ag.first_name AS against_first_name,
                ag.last_name AS against_last_name,
                ag.role AS against_role,
+               ag.email AS against_email,
                COALESCE(
                  json_agg(
                    json_build_object(
@@ -102,19 +105,23 @@ const getDisputes = async (req, res) => {
         LEFT JOIN users rb ON d.raised_by = rb.id
         LEFT JOIN users ag ON d.against = ag.id
         LEFT JOIN dispute_evidence e ON d.id = e.dispute_id
-        GROUP BY d.id, rb.first_name, rb.last_name, rb.role, ag.first_name, ag.last_name, ag.role
+        GROUP BY d.id, rb.first_name, rb.last_name, rb.role, rb.email,
+                 ag.first_name, ag.last_name, ag.role, ag.email
         ORDER BY d.created_at DESC;
       `;
     } else {
       query = `
         SELECT d.*,
                d.project_title,
+               d.admin_reason,  -- add this
                rb.first_name AS raised_by_first_name,
                rb.last_name AS raised_by_last_name,
                rb.role AS raised_by_role,
+               rb.email AS raised_by_email,
                ag.first_name AS against_first_name,
                ag.last_name AS against_last_name,
                ag.role AS against_role,
+               ag.email AS against_email,
                COALESCE(
                  json_agg(
                    json_build_object(
@@ -129,7 +136,8 @@ const getDisputes = async (req, res) => {
         LEFT JOIN users ag ON d.against = ag.id
         LEFT JOIN dispute_evidence e ON d.id = e.dispute_id
         WHERE d.raised_by = $1 OR d.against = $1
-        GROUP BY d.id, rb.first_name, rb.last_name, rb.role, ag.first_name, ag.last_name, ag.role
+        GROUP BY d.id, rb.first_name, rb.last_name, rb.role, rb.email,
+                 ag.first_name, ag.last_name, ag.role, ag.email
         ORDER BY d.created_at DESC;
       `;
       params = [userId];
@@ -155,28 +163,46 @@ const getDisputes = async (req, res) => {
 const resolveDispute = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, resolution } = req.body;
+    const { status, resolution, admin_reason } = req.body;
 
+    // Validate status
     const validStatuses = [
       "under_review",
       "in_progress",
       "resolved",
       "rejected",
     ];
-    if (!validStatuses.includes(status))
-      return res.status(400).json({ message: "Invalid status" });
+    if (!validStatuses.includes(status)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid status" });
+    }
 
+    // Update the dispute
     const result = await pool.query(
-      `UPDATE disputes 
-       SET status=$1, resolution=$2, updated_at=now() 
-       WHERE id=$3 RETURNING *`,
-      [status, resolution, id]
+      `UPDATE disputes
+       SET status = $1,
+           resolution = $2,
+           admin_reason = $3,
+           updated_at = NOW()
+       WHERE id = $4
+       RETURNING *`,
+      [status, resolution || null, admin_reason || null, id]
     );
 
-    res.json({ success: true, dispute: result.rows[0] });
+    if (!result.rows.length) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Dispute not found" });
+    }
+
+    res.json({
+      success: true,
+      dispute: result.rows[0],
+    });
   } catch (err) {
     console.error("Error resolving dispute:", err);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
 

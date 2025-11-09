@@ -1,5 +1,6 @@
 import { BASE_URL } from "./config.js";
 import { Session } from "./session.js";
+import { showLoader, hideLoader } from "./loader.js";
 
 /* ================= API Helper ================= */
 async function fetchWithAuth(url, options = {}) {
@@ -9,7 +10,10 @@ async function fetchWithAuth(url, options = {}) {
     Authorization: `Bearer ${Session.token()}`,
   };
   const res = await fetch(url, options);
-  if (!res.ok) throw new Error((await res.json()).message || "API Error");
+  if (!res.ok)
+    throw new Error(
+      (await res.json()).message || "Something Wrong Happened, Try Again"
+    );
   return res.json();
 }
 
@@ -18,6 +22,7 @@ export async function loadFreelancerApplications() {
   content.innerHTML = "<p>Loading all applications...</p>";
 
   try {
+    showLoader();
     const data = await fetchWithAuth(
       `${BASE_URL}/freelancer/recent-applications?all=true`
     );
@@ -50,5 +55,7 @@ export async function loadFreelancerApplications() {
   } catch (err) {
     console.error(err);
     content.innerHTML = "<p>Error loading applications.</p>";
+  } finally {
+    hideLoader(); // ✅ Hide loader after fetch finishes
   }
 }

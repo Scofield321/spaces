@@ -1,7 +1,7 @@
 // freelancer-notifications.js
 import { BASE_URL } from "./config.js";
 import { Session } from "./session.js";
-
+import { showLoader, hideLoader } from "./loader.js";
 // ---------- API Helper ----------
 async function fetchWithAuth(url, options = {}) {
   options.headers = {
@@ -10,7 +10,10 @@ async function fetchWithAuth(url, options = {}) {
     Authorization: `Bearer ${Session.token()}`,
   };
   const res = await fetch(url, options);
-  if (!res.ok) throw new Error((await res.json()).msg || "API Error");
+  if (!res.ok)
+    throw new Error(
+      (await res.json()).msg || "Something Wrong Happened, Try Again"
+    );
   return res.json();
 }
 
@@ -37,6 +40,7 @@ function updateNotificationBadge(notifications) {
 // ---------- Fetch and display notifications ----------
 export async function loadNotifications() {
   const content = document.getElementById("main-content");
+  showLoader();
 
   try {
     const data = await fetchWithAuth(`${BASE_URL}/freelancer/notifications`);
@@ -90,6 +94,7 @@ export async function loadNotifications() {
         const id = li.dataset.id;
 
         try {
+          showLoader();
           await fetchWithAuth(
             `${BASE_URL}/freelancer/notifications/${id}/mark-read`,
             { method: "POST" }
@@ -106,12 +111,16 @@ export async function loadNotifications() {
           updateNotificationBadge(updated.notifications);
         } catch (err) {
           console.error("Error marking notification read:", err);
+        } finally {
+          hideLoader(); // ✅ hide loader after marking read
         }
       };
     });
   } catch (err) {
     console.error("Error loading notifications:", err);
     content.innerHTML = "<p>Error loading notifications.</p>";
+  } finally {
+    hideLoader(); // ✅ hide loader at end, even on error
   }
 }
 

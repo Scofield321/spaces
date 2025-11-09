@@ -1,5 +1,6 @@
 import { BASE_URL } from "./config.js";
 import { Session } from "./session.js";
+import { showLoader, hideLoader } from "./loader.js";
 
 // Helper for fetch with auth
 async function fetchWithAuth(url, options = {}) {
@@ -11,7 +12,10 @@ async function fetchWithAuth(url, options = {}) {
     options.headers["Content-Type"] = "application/json";
   }
   const res = await fetch(url, options);
-  if (!res.ok) throw new Error((await res.json()).message || "API Error");
+  if (!res.ok)
+    throw new Error(
+      (await res.json()).message || "Something Wrong Happened, Try Again"
+    );
   return res.json();
 }
 
@@ -71,9 +75,9 @@ function formatOverview(text) {
 
 // ---------- Load Freelancer Profile ----------
 export async function loadFreelancerProfile() {
+  const content = document.getElementById("main-content");
+  showLoader();
   try {
-    const content = document.getElementById("main-content");
-
     const data = await fetchWithAuth(`${BASE_URL}/freelancer/profile`);
     const { user, skills, projects, portfolio_images = [] } = data;
 
@@ -179,6 +183,8 @@ export async function loadFreelancerProfile() {
     };
   } catch (e) {
     console.error(e);
+  } finally {
+    hideLoader(); // ✅ hide loader at end, even on error
   }
 }
 
@@ -356,6 +362,7 @@ function renderEditProfile(user, skills = [], projects = []) {
     formData.append("profile_picture", file);
 
     try {
+      showLoader();
       const res = await fetchWithAuth(
         `${BASE_URL}/freelancer/profile/profile-picture`,
         { method: "POST", body: formData }
@@ -366,6 +373,7 @@ function renderEditProfile(user, skills = [], projects = []) {
       uploadStatus.textContent = "❌ Upload failed";
     } finally {
       spinner.classList.add("hidden");
+      hideLoader(); // ✅ hide loader after upload
     }
   };
 
@@ -457,6 +465,7 @@ function renderEditProfile(user, skills = [], projects = []) {
     formData.append("files", file);
 
     try {
+      showLoader();
       const res = await fetchWithAuth(
         `${BASE_URL}/freelancer/profile/upload-project-images`,
         { method: "POST", body: formData }
@@ -465,6 +474,8 @@ function renderEditProfile(user, skills = [], projects = []) {
     } catch (err) {
       console.error("Failed to upload portfolio image:", file.name, err);
       alert("Failed to upload portfolio image: " + file.name);
+    } finally {
+      hideLoader(); // ✅ hide loader after upload
     }
   }
 
@@ -522,6 +533,7 @@ function renderEditProfile(user, skills = [], projects = []) {
     };
 
     try {
+      showLoader();
       await fetchWithAuth(`${BASE_URL}/freelancer/profile`, {
         method: "PUT",
         body: JSON.stringify(updatedData),
@@ -531,6 +543,8 @@ function renderEditProfile(user, skills = [], projects = []) {
       loadFreelancerProfile();
     } catch (err) {
       alert(`Failed to save profile: ${err.message}`);
+    } finally {
+      hideLoader(); // ✅ hide loader after upload
     }
   };
 }

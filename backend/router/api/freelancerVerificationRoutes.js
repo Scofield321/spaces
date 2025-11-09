@@ -14,11 +14,11 @@ const { ensureBody } = require("../../middleware/ensureBody");
 router.post(
   "/submit",
   authMiddleware,
-  ensureBody,
   upload.fields([
     { name: "front", maxCount: 1 },
     { name: "back", maxCount: 1 },
   ]),
+  ensureBody,
   async (req, res) => {
     req.body.user_role = "freelancer";
     await submitVerification(req, res);

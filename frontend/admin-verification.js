@@ -1,44 +1,50 @@
 import { BASE_URL } from "./config.js";
 import { Session } from "./session.js";
+import { showLoader, hideLoader } from "./loader.js";
 
-// ---------- API Wrapper ----------
+/* ================= API Helper ================= */
 async function fetchWithAuth(url, options = {}) {
   options.headers = {
     ...(options.headers || {}),
-    "Content-Type": "application/json",
+    "Content-Type":
+      options.body instanceof FormData ? undefined : "application/json",
     Authorization: `Bearer ${Session.token()}`,
   };
-  const res = await fetch(url, options);
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({}));
-    throw new Error(error.msg || "API Error");
+
+  showLoader();
+  try {
+    const res = await fetch(url, options);
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({}));
+      throw new Error(error.msg || "Something Wrong Happened, Try Again");
+    }
+    return res.json();
+  } finally {
+    hideLoader();
   }
-  return res.json();
 }
 
-// ---------- Document Modal ----------
+/* ================= Document Modal ================= */
 const modal = document.getElementById("document-modal");
 const modalFrame = document.getElementById("document-frame");
 const closeModalBtn = document.querySelector(".close-modal");
 
-window.previewDocument = (url) => {
+function previewDocument(url) {
   modalFrame.src = url;
-  modal.style.display = "block";
-};
+  modal.style.display = "flex";
+}
 
-closeModalBtn.onclick = () => {
+function closeDocumentModal() {
   modal.style.display = "none";
   modalFrame.src = "";
-};
+}
 
+closeModalBtn.onclick = closeDocumentModal;
 window.onclick = (event) => {
-  if (event.target === modal) {
-    modal.style.display = "none";
-    modalFrame.src = "";
-  }
+  if (event.target === modal) closeDocumentModal();
 };
 
-// ---------- Load All Verifications ----------
+/* ================= Load Verifications ================= */
 export const loadAdminVerifications = async () => {
   const container = document.getElementById("main-content");
   container.innerHTML = `
@@ -49,8 +55,9 @@ export const loadAdminVerifications = async () => {
   `;
 
   try {
-    const res = await fetchWithAuth(`${BASE_URL}/admin/verifications/all`); // Fetch all
-    const { verifications } = res;
+    const { verifications = [] } = await fetchWithAuth(
+      `${BASE_URL}/admin/verifications/all`
+    );
 
     if (!verifications.length) {
       container.innerHTML = `
@@ -65,93 +72,115 @@ export const loadAdminVerifications = async () => {
 
     container.innerHTML = `
       <h2 class="page-title">All Verifications</h2>
-      <div class="verification-list">
-        ${verifications
-          .map((v) => {
-            const statusClass =
-              v.status === "pending"
-                ? "badge-pending"
-                : v.status === "approved"
-                ? "badge-success"
-                : "badge-rejected";
-
-            // Hide approve/reject buttons if not pending
-            const actions =
-              v.status === "pending"
-                ? `
-                  <button class="btn btn-sm btn-success" onclick="approveVerification('${v.id}')">✔ Approve</button>
-                  <button class="btn btn-sm btn-danger" onclick="rejectVerificationPrompt('${v.id}')">✖ Reject</button>
-                `
-                : `<span class="text-muted">No actions available</span>`;
-
-            return `
-              <div class="card-soft verification-card">
-                <div class="verification-header">
-                  <h4>${v.first_name} ${v.last_name}</h4>
-                  <span class="badge ${statusClass}">${
-              v.status.charAt(0).toUpperCase() + v.status.slice(1)
-            }</span>
-                </div>
-                <div class="verification-info">
-                  <p><strong>Document:</strong> ${v.document_type}</p>
-                  <p><strong>Role:</strong> ${v.user_role}</p>
-                  <p><strong>Submitted At:</strong> ${new Date(
-                    v.submitted_at
-                  ).toLocaleString()}</p>
-                  ${
-                    v.reviewed_at
-                      ? `<p><strong>Reviewed At:</strong> ${new Date(
-                          v.reviewed_at
-                        ).toLocaleString()}</p>`
-                      : ""
-                  }
-                  ${
-                    v.status === "rejected"
-                      ? `<p><strong>Rejection Reason:</strong> ${
-                          v.rejection_reason || "No reason provided"
-                        }</p>`
-                      : ""
-                  }
-                </div>
-                <div class="verification-actions">
-                  <button class="btn btn-sm btn-outline" onclick="previewDocument('${
-                    v.document_front
-                  }')">View Front</button>
-                  ${
-                    v.document_back
-                      ? `<button class="btn btn-sm btn-outline" onclick="previewDocument('${v.document_back}')">View Back</button>`
-                      : ""
-                  }
-                  ${actions}
-                </div>
-              </div>
-            `;
-          })
-          .join("")}
-      </div>
+      <div class="verification-list" id="verification-list"></div>
     `;
+
+    const list = document.getElementById("verification-list");
+    list.innerHTML = verifications
+      .map((v) => renderVerificationCard(v))
+      .join("");
+
+    attachVerificationActions();
   } catch (err) {
     container.innerHTML = `<p class="text-danger">${err.message}</p>`;
   }
 };
 
-// ---------- Approve ----------
-window.approveVerification = async (id) => {
-  if (!confirm("Approve this verification?")) return;
-  await fetchWithAuth(`${BASE_URL}/admin/verifications/approve/${id}`, {
-    method: "POST",
-  });
-  loadAdminVerifications();
-};
+/* ================= Render Verification Card ================= */
+function renderVerificationCard(v) {
+  const statusClass =
+    v.status === "pending"
+      ? "badge-pending"
+      : v.status === "approved"
+      ? "badge-success"
+      : "badge-rejected";
 
-// ---------- Reject ----------
-window.rejectVerificationPrompt = async (id) => {
-  const reason = prompt("Enter rejection reason:");
-  if (!reason) return;
+  return `
+    <div class="card-soft verification-card" data-id="${v.id}">
+      <div class="verification-header">
+        <h4>${v.first_name || ""} ${v.last_name || ""}</h4>
+        <span class="badge ${statusClass}">${
+    v.status.charAt(0).toUpperCase() + v.status.slice(1)
+  }</span>
+      </div>
+      <div class="verification-info">
+        <p><strong>Document:</strong> ${v.document_type || "-"}</p>
+        <p><strong>Role:</strong> ${v.user_role || "-"}</p>
+        <p><strong>Submitted At:</strong> ${
+          v.submitted_at ? new Date(v.submitted_at).toLocaleString() : "-"
+        }</p>
+        ${
+          v.reviewed_at
+            ? `<p><strong>Reviewed At:</strong> ${new Date(
+                v.reviewed_at
+              ).toLocaleString()}</p>`
+            : ""
+        }
+        ${
+          v.status === "rejected"
+            ? `<p><strong>Rejection Reason:</strong> ${
+                v.rejection_reason || "No reason provided"
+              }</p>`
+            : ""
+        }
+      </div>
+      <div class="verification-actions">
+        <button class="btn btn-sm btn-outline view-front">View Front</button>
+        ${
+          v.document_back
+            ? `<button class="btn btn-sm btn-outline view-back">View Back</button>`
+            : ""
+        }
+        ${
+          v.status === "pending"
+            ? `<button class="btn btn-sm btn-success approve-btn">✔ Approve</button>
+               <button class="btn btn-sm btn-danger reject-btn">✖ Reject</button>`
+            : `<span class="text-muted">No actions available</span>`
+        }
+      </div>
+    </div>
+  `;
+}
 
-  await fetchWithAuth(`${BASE_URL}/admin/verifications/reject/${id}`, {
-    method: "POST",
-    body: JSON.stringify({ reason }),
+/* ================= Attach Action Handlers ================= */
+function attachVerificationActions() {
+  document.querySelectorAll(".verification-card").forEach((card) => {
+    const id = card.dataset.id;
+
+    card.querySelector(".view-front")?.addEventListener("click", () => {
+      const url = card.querySelector(".view-front").dataset.url;
+      previewDocument(url);
+    });
+
+    card.querySelector(".view-back")?.addEventListener("click", () => {
+      const url = card.querySelector(".view-back").dataset.url;
+      previewDocument(url);
+    });
+
+    card.querySelector(".approve-btn")?.addEventListener("click", async () => {
+      if (!confirm("Approve this verification?")) return;
+      try {
+        await fetchWithAuth(`${BASE_URL}/admin/verifications/approve/${id}`, {
+          method: "POST",
+        });
+        loadAdminVerifications();
+      } catch (err) {
+        alert(err.message || "Failed to approve verification");
+      }
+    });
+
+    card.querySelector(".reject-btn")?.addEventListener("click", async () => {
+      const reason = prompt("Enter rejection reason:");
+      if (!reason) return;
+      try {
+        await fetchWithAuth(`${BASE_URL}/admin/verifications/reject/${id}`, {
+          method: "POST",
+          body: JSON.stringify({ reason }),
+        });
+        loadAdminVerifications();
+      } catch (err) {
+        alert(err.message || "Failed to reject verification");
+      }
+    });
   });
-  loadAdminVerifications();
-};
+}

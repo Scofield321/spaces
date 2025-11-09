@@ -1,5 +1,6 @@
 import { BASE_URL } from "./config.js";
 import { Session } from "./session.js";
+import { showLoader, hideLoader } from "./loader.js";
 
 async function fetchWithAuth(url, options = {}) {
   options.headers = {
@@ -10,7 +11,10 @@ async function fetchWithAuth(url, options = {}) {
     options.headers["Content-Type"] = "application/json";
   }
   const res = await fetch(url, options);
-  if (!res.ok) throw new Error((await res.json()).message || "API Error");
+  if (!res.ok)
+    throw new Error(
+      (await res.json()).message || "Something Wrong Happened, Try Again"
+    );
   return res.json();
 }
 
@@ -20,6 +24,7 @@ export async function loadDisputes() {
   content.innerHTML = `<div class="loading">Loading disputes...</div>`;
 
   try {
+    showLoader();
     const { disputes } = await fetchWithAuth(`${BASE_URL}/disputes`);
     const userRole = Session.user()?.role;
     const listHTML = disputes
@@ -57,6 +62,8 @@ export async function loadDisputes() {
     });
   } catch (err) {
     content.innerHTML = `<p class="error">Failed to load disputes: ${err.message}</p>`;
+  } finally {
+    hideLoader(); // ✅ Always hide loader
   }
 }
 
@@ -91,30 +98,33 @@ function openResolveModal(dispute) {
   const modal = document.createElement("div");
   modal.className = "resolve-modal-backdrop";
   modal.innerHTML = `
-    <div class="resolve-modal-content">
-      <h3>Resolve Dispute</h3>
-      <label>Status</label>
-      <select id="resolution-type" required>
-        <option value="">--Select Resolution--</option>
-        <option value="resolved">Resolved</option>
-        <option value="in_progress">In Progress</option>
-        <option value="rejected">Rejected</option>
-      </select>
+  <div class="resolve-modal-content">
+    <h3>Resolve Dispute</h3>
+    <label>Status</label>
+    <select id="resolution-type" required>
+      <option value="">--Select Resolution--</option>
+      <option value="resolved">Resolved</option>
+      <option value="in_progress">In Progress</option>
+      <option value="rejected">Rejected</option>
+    </select>
 
-      <label>Resolution Notes</label>
-      <textarea id="resolution-notes" placeholder="Enter resolution notes"></textarea>
+    <label>Resolution Notes</label>
+    <textarea id="resolution-notes" placeholder="Enter resolution notes"></textarea>
 
-      <div style="margin-top: 10px;">
-        <label><input type="checkbox" id="notify-freelancer"> Notify Freelancer</label><br>
-        <label><input type="checkbox" id="notify-client"> Notify Client</label>
-      </div>
+    <label>Admin Reason</label>
+    <textarea id="admin-reason" placeholder="Optional: Explain to the user"></textarea>
 
-      <div class="modal-actions">
-        <button id="confirm-resolution">Confirm</button>
-        <button id="cancel-resolution">Cancel</button>
-      </div>
+    <div style="margin-top: 10px;">
+      <label><input type="checkbox" id="notify-freelancer"> Notify Freelancer</label><br>
+      <label><input type="checkbox" id="notify-client"> Notify Client</label>
     </div>
-  `;
+
+    <div class="modal-actions">
+      <button id="confirm-resolution">Confirm</button>
+      <button id="cancel-resolution">Cancel</button>
+    </div>
+  </div>
+`;
 
   document.body.appendChild(modal);
 
@@ -133,6 +143,7 @@ function openResolveModal(dispute) {
 
     const status = typeEl.value;
     const notes = notesEl.value;
+    const adminReason = modal.querySelector("#admin-reason").value;
     const notifyFreelancer = modal.querySelector("#notify-freelancer").checked;
     const notifyClient = modal.querySelector("#notify-client").checked;
 
@@ -149,6 +160,7 @@ function openResolveModal(dispute) {
           body: JSON.stringify({
             status,
             resolution: notes,
+            admin_reason: adminReason,
             notifyFreelancer,
             notifyClient,
           }),
@@ -199,6 +211,7 @@ async function toggleDisputeDetails(id) {
 function disputeCardHTML(d, isAdmin = false) {
   const created = new Date(d.created_at).toLocaleString();
 
+  // Determine status badge color
   const statusColor =
     d.status === "resolved"
       ? "status-resolved"
@@ -208,12 +221,16 @@ function disputeCardHTML(d, isAdmin = false) {
       ? "status-rejected"
       : "status-open";
 
+  // Raised by user info
   const raisedBy = `${d.raised_by_first_name || "-"} ${
     d.raised_by_last_name || "-"
-  } (${d.raised_by_role || "N/A"})`;
+  } (${d.raised_by_role || "N/A"}, ${d.raised_by_email || "No Email"})`;
 
+  // Against user info
   const against = d.against_first_name
-    ? `${d.against_first_name} ${d.against_last_name} (${d.against_role})`
+    ? `${d.against_first_name} ${d.against_last_name} (${
+        d.against_role || "N/A"
+      }, ${d.against_email || "No Email"})`
     : "-";
 
   return `
@@ -223,7 +240,7 @@ function disputeCardHTML(d, isAdmin = false) {
           <h3>Dispute Title: ${d.project_title || "Untitled"}</h3>
           <p><strong>Raised By:</strong> ${raisedBy}</p>
           <p><strong>Against:</strong> ${against}</p>
-          <p><strong>Reason:</strong> ${d.reason}</p>
+          <p><strong>Reason:</strong> ${d.reason || "-"}</p>
           <p><strong>Status:</strong> 
             <span class="status-badge ${statusColor}">
               ${d.status.replace("_", " ").toUpperCase()}
@@ -233,19 +250,13 @@ function disputeCardHTML(d, isAdmin = false) {
 
         <div>
           <p><strong>Date:</strong> ${created}</p>
-          <button class="btn-outline toggle-details " data-id="${d.id}">
-            ${
-              document.querySelector(`#details-${d.id}`)?.style.display ===
-              "block"
-                ? "Hide Details"
-                : "View Details"
-            }
+          <button class="btn-outline toggle-details" data-id="${d.id}">
+            View Details
           </button>
 
           ${
             isAdmin
-              ? `
-                <div class="admin-actions" style="margin-top:0.5rem;">
+              ? `<div class="admin-actions" style="margin-top:0.5rem;">
                   <button class="btn btn-primary btn-manage" data-id="${d.id}">
                     Manage / Review
                   </button>
@@ -257,6 +268,11 @@ function disputeCardHTML(d, isAdmin = false) {
 
       <div class="dispute-details" id="details-${d.id}" style="display:none;">
         <p><strong>Description:</strong> ${d.description || "-"}</p>
+        ${
+          d.admin_reason
+            ? `<p><strong>Admin Note:</strong> ${d.admin_reason}</p>`
+            : ""
+        }
         <div class="evidence-section" id="evidence-${d.id}">
           Loading evidence...
         </div>
@@ -399,6 +415,7 @@ async function openDisputeForm() {
 
     try {
       statusEl.textContent = "Submitting...";
+      showLoader();
       await fetchWithAuth(`${BASE_URL}/disputes`, {
         method: "POST",
         body: formData,
@@ -411,6 +428,8 @@ async function openDisputeForm() {
     } catch (err) {
       statusEl.textContent = `Failed to submit: ${err.message}`;
       console.error(err);
+    } finally {
+      hideLoader(); // ✅ Hide loader after submit
     }
   };
 }

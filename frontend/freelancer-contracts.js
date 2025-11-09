@@ -1,6 +1,7 @@
 // freelancer-contracts.js
 import { BASE_URL } from "./config.js";
 import { Session } from "./session.js";
+import { showLoader, hideLoader } from "./loader.js";
 
 /* ================= API Helper ================= */
 async function fetchWithAuth(url, options = {}) {
@@ -10,7 +11,10 @@ async function fetchWithAuth(url, options = {}) {
     Authorization: `Bearer ${Session.token()}`,
   };
   const res = await fetch(url, options);
-  if (!res.ok) throw new Error((await res.json()).message || "API Error");
+  if (!res.ok)
+    throw new Error(
+      (await res.json()).message || "Something Wrong Happened, Try Again"
+    );
   return res.json();
 }
 
@@ -47,6 +51,8 @@ export async function loadContracts() {
     `;
 
     const container = document.getElementById("contracts-results");
+
+    showLoader();
     const data = await fetchWithAuth(`${BASE_URL}/contracts`);
 
     if (!data.contracts.length) {
@@ -79,11 +85,14 @@ export async function loadContracts() {
       btn.addEventListener("click", async () => {
         const id = btn.dataset.id;
         try {
+          showLoader();
           const res = await fetchWithAuth(`${BASE_URL}/contracts/${id}`);
           openContractModal(res.contract);
         } catch (err) {
           console.error(err);
           alert("Failed to load contract details");
+        } finally {
+          hideLoader(); // ✅ hide loader after contract modal data loads
         }
       });
     });
@@ -92,6 +101,8 @@ export async function loadContracts() {
     document.getElementById(
       "main-content"
     ).innerHTML = `<p>Error loading contracts</p>`;
+  } finally {
+    hideLoader(); // ✅ hide loader after initial fetch finishes
   }
 }
 
@@ -238,6 +249,7 @@ function openContractModal(contract) {
         ? "accept"
         : "decline";
       try {
+        showLoader();
         await fetchWithAuth(`${BASE_URL}/contracts/${contract.id}/${action}`, {
           method: "PATCH",
         });
@@ -247,6 +259,8 @@ function openContractModal(contract) {
       } catch (err) {
         console.error(err);
         alert("Error performing action");
+      } finally {
+        hideLoader(); // ✅ hide loader after action completes
       }
     };
   });

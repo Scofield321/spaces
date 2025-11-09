@@ -1,18 +1,26 @@
 import { BASE_URL } from "./config.js";
 import { Session } from "./session.js";
+import { showLoader, hideLoader } from "./loader.js";
 
-// ---------- Helper Functions ----------
-async function fetchWithAuth(url, options = {}) {
+// ---------- API Helper ----------
+export async function fetchWithAuth(url, options = {}) {
   options.headers = {
     ...(options.headers || {}),
     "Content-Type": "application/json",
     Authorization: `Bearer ${Session.token()}`,
   };
-  const res = await fetch(url, options);
-  if (!res.ok) throw new Error((await res.json()).message || "API Error");
-  return res.json();
+
+  showLoader();
+  try {
+    const res = await fetch(url, options);
+    if (!res.ok) throw new Error((await res.json()).message || "API Error");
+    return res.json();
+  } finally {
+    hideLoader();
+  }
 }
 
+// ---------- Helpers ----------
 function formatCurrency(value) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -32,7 +40,6 @@ function skeletonLoader() {
   `;
 }
 
-// ======= dynamic mapping helper ========
 function categorizeProjects(projects) {
   const categories = { active: 0, pending: 0, completed: 0 };
 
@@ -49,31 +56,19 @@ function categorizeProjects(projects) {
       case "completed":
         categories.completed++;
         break;
-      default:
-        // Optional: handle unknown statuses
-        break;
     }
   });
 
   return categories;
 }
 
-// ---------- UI Templates ----------
+// ---------- UI Renderers ----------
 function renderStats({ active, pending, completed }) {
   return `
     <section class="stats-grid">
-      <div class="stat-card">
-        <h4>${active}</h4>
-        <p>Active Projects</p>
-      </div>
-      <div class="stat-card">
-        <h4>${pending}</h4>
-        <p>Pending Projects</p>
-      </div>
-      <div class="stat-card">
-        <h4>${completed}</h4>
-        <p>Completed Projects</p>
-      </div>
+      <div class="stat-card"><h4>${active}</h4><p>Active Projects</p></div>
+      <div class="stat-card"><h4>${pending}</h4><p>Pending Projects</p></div>
+      <div class="stat-card"><h4>${completed}</h4><p>Completed Projects</p></div>
     </section>
   `;
 }
@@ -103,12 +98,11 @@ function renderProjects(projects) {
               : ""
           }
           <p><strong>Created:</strong> ${formatDate(p.created_at)}</p>
-          ${
+          <p><strong>Assigned to:</strong> ${
             p.freelancer_id
-              ? `<p><strong>Assigned to:</strong> ${p.freelancer_first_name} ${p.freelancer_last_name}</p>`
-              : `<p><strong>Assigned to:</strong> Not assigned yet</p>`
-          }
-          
+              ? `${p.freelancer_first_name} ${p.freelancer_last_name}`
+              : "Not assigned yet"
+          }</p>
         </div>
       `;
     })
@@ -146,7 +140,6 @@ function renderDashboard({ clientName, stats, projects, activities }) {
       <a class="link" data-view="manage-projects" id="viewAllProjects">View All Projects →</a>
     </section>
 
-
     <section class="card">
       <h3>Recent Activity</h3>
       ${renderActivity(activities)}
@@ -155,7 +148,7 @@ function renderDashboard({ clientName, stats, projects, activities }) {
   `;
 }
 
-// ---------- Main Loader ----------
+// ---------- Main Function ----------
 export async function loadClientHome() {
   const content = document.getElementById("main-content");
   content.innerHTML = skeletonLoader();
@@ -168,8 +161,6 @@ export async function loadClientHome() {
 
     const projects = projectsRes.projects || [];
     const activities = notifRes.notifications?.slice(0, 5) || [];
-
-    // ✅ Dynamically categorize projects
     const stats = categorizeProjects(projects);
 
     const user = Session.user();

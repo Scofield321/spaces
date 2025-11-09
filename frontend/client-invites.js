@@ -1,17 +1,29 @@
 import { BASE_URL } from "./config.js";
 import { Session } from "./session.js";
+import { showLoader, hideLoader } from "./loader.js";
 
+// ---------- API Helper ----------
 async function fetchWithAuth(url, options = {}) {
   options.headers = {
     ...(options.headers || {}),
     "Content-Type": "application/json",
     Authorization: `Bearer ${Session.token()}`,
   };
-  const res = await fetch(url, options);
-  if (!res.ok) throw new Error((await res.json()).message || "API Error");
-  return res.json();
+
+  showLoader();
+  try {
+    const res = await fetch(url, options);
+    if (!res.ok)
+      throw new Error(
+        (await res.json()).message || "Something Wrong Happened, Try Again"
+      );
+    return res.json();
+  } finally {
+    hideLoader();
+  }
 }
 
+// ---------- Load Client Invitations ----------
 export async function loadClientInvites() {
   const content = document.getElementById("main-content");
 
@@ -67,9 +79,7 @@ export async function loadClientInvites() {
       })
       .join("");
 
-    // -------------------------
     // Update button → open modal
-    // -------------------------
     document.querySelectorAll(".update-btn").forEach((btn) => {
       btn.onclick = () => {
         openUpdateInviteModal({
@@ -86,18 +96,20 @@ export async function loadClientInvites() {
       btn.onclick = async () => {
         if (!confirm("Are you sure you want to delete this invitation?"))
           return;
+
         try {
+          showLoader();
           await fetchWithAuth(
             `${BASE_URL}/client/invite/${btn.dataset.id}/delete`,
-            {
-              method: "DELETE",
-            }
+            { method: "DELETE" }
           );
           alert("❌ Invitation deleted");
           loadClientInvites();
         } catch (err) {
           console.error(err);
           alert("Failed to delete invitation");
+        } finally {
+          hideLoader();
         }
       };
     });
@@ -166,6 +178,7 @@ function openUpdateInviteModal({ contractId, title, description, message }) {
     }
 
     try {
+      showLoader();
       await fetchWithAuth(`${BASE_URL}/client/invite/${contractId}/update`, {
         method: "PATCH",
         body: JSON.stringify({
@@ -186,6 +199,8 @@ function openUpdateInviteModal({ contractId, title, description, message }) {
       console.error(err);
       msg.textContent = err.message || "Failed to update invitation";
       msg.style.color = "red";
+    } finally {
+      hideLoader();
     }
   };
 }
