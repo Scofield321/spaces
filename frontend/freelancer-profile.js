@@ -357,7 +357,7 @@ function renderEditProfile(user, skills = [], projects = []) {
 
     try {
       const res = await fetchWithAuth(
-        `${BASE_URL}/freelancer/profile-picture`,
+        `${BASE_URL}/freelancer/profile/profile-picture`,
         { method: "POST", body: formData }
       );
       uploadedProfileUrl = res.url;
