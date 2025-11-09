@@ -204,11 +204,9 @@ const forgotPassword = async (req, res, next) => {
     if (lastOtp.rows[0]) {
       const lastTs = new Date(lastOtp.rows[0].created_at).getTime();
       if (Date.now() - lastTs < 60 * 1000) {
-        return res
-          .status(429)
-          .json({
-            msg: "Wait at least 1 minute before requesting another OTP",
-          });
+        return res.status(429).json({
+          msg: "Wait at least 1 minute before requesting another OTP",
+        });
       }
     }
 
@@ -327,7 +325,7 @@ const login = async (req, res, next) => {
 
     const token = jwt.sign(
       { id: user.id, role: user.role },
-      process.env.JWT_SECRET || "secret",
+      process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
 
@@ -374,7 +372,7 @@ const createAdmin = async (req, res, next) => {
 
     const token = jwt.sign(
       { id: admin.id, role: admin.role },
-      process.env.JWT_SECRET || "secret",
+      process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
 
