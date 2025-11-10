@@ -51,7 +51,7 @@ app.use(
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // -------------------------
-// Root test route
+// Root test routes
 // -------------------------
 app.get("/", (req, res) => res.json({ message: "Spaces backend running!" }));
 
